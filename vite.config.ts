@@ -15,6 +15,8 @@ export default defineConfig({
   preview: {
     host: '0.0.0.0',
     port: 4173,
+    // Sandbox preview proxies serve the app from an external host.
+    allowedHosts: true,
   },
   server: {
     host: '0.0.0.0',

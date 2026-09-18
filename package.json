@@ -1,0 +1,32 @@
+{
+  "name": "intergalactic-cable",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Intergalactic Cable — simulated live TV from imaginary planets and alternate universes.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "serve": "node preview-server.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^0.1.65",
+    "@types/node": "^22.10.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "~5.6.3",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}

@@ -126,6 +126,8 @@ module in `src/channels/`.
   `actions/upload-pages-artifact@v4`, and `actions/deploy-pages@v4` with
   minimal `pages: write` / `id-token: write` permissions.
 - One-time setup: repository **Settings → Pages → Source: GitHub Actions**.
+  Note: GitHub Pages requires a **public** repository on the Free plan
+  (private-repository Pages needs a paid plan).
 - The build runs `npm ci && npm test && npm run build`, so a failing test
   blocks deployment. `dist/index.html` sits at the artifact root and hash
   routing means direct channel links survive refresh without rewrites.

@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from '../src/App'
 import { PREFS_KEY } from '../src/lib/prefs'
 import { CHANNELS } from '../src/data/channels'
+import { generateChannel } from '../src/data/generate'
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 const settle = async (ms = 80) => {
@@ -120,7 +121,10 @@ describe('App integration', () => {
     await settle(700)
     expect($('.tv-frame')?.className).toContain('on')
     expect(canvasIsDrawing()).toBe(true)
-    expect(txt('.rd-name')).toBe(CHANNELS[14 % CHANNELS.length].name)
+    // 11 ups finish the curated block, then the dial spills into the void:
+    // 12th up → ch 1, 13th → ch 3 (2 is curated), 14th → ch 4
+    expect(txt('.rd-name')).toBe(generateChannel(4).name)
+    expect(window.location.hash).toBe('#/c/inf-4')
   })
 
   it('keyboard: m mutes, g opens guide, Escape closes it', async () => {
@@ -152,6 +156,76 @@ describe('App integration', () => {
     await settle(500)
     expect(txt('.rd-name')).toBe('Galactic News 404')
     expect(window.location.hash).toBe('#/c/galactic-news-404')
+  })
+
+  it('numeric entry tunes to a generated channel on the infinite dial', async () => {
+    await mountApp()
+    click($('.power-big'))
+    await settle(60)
+
+    key('5'); key('5')
+    expect($('.num-entry')?.textContent).toContain('55')
+    key('Enter')
+    await settle(600)
+    expect(txt('.rd-name')).toBe(generateChannel(55).name)
+    expect(txt('.rd-ch')).toBe('55')
+    expect(window.location.hash).toBe('#/c/inf-55')
+    expect(canvasIsDrawing(), 'generated channel renders broadcast pixels').toBe(true)
+    expect(($('.captions')?.textContent ?? '').length).toBeGreaterThan(10)
+  })
+
+  it('channel 0 still does not exist', async () => {
+    await mountApp()
+    click($('.power-big'))
+    await settle(60)
+    key('0')
+    key('Enter')
+    await settle(100)
+    expect(txt('.toast')).toContain('No channel 0')
+  })
+
+  it('channel up past the last curated channel enters the infinite dial', async () => {
+    await mountApp()
+    click($('.power-big'))
+    await settle(60)
+
+    for (let i = 0; i < 11; i++) key('ArrowUp') // walk to the last curated channel
+    await settle(600)
+    expect(txt('.rd-name')).toBe(CHANNELS[11].name)
+
+    key('ArrowUp') // one more: over the edge
+    await settle(600)
+    expect(txt('.rd-ch')).toBe('01')
+    expect(txt('.rd-name')).toBe(generateChannel(1).name)
+    expect(window.location.hash).toBe('#/c/inf-1')
+    expect(canvasIsDrawing()).toBe(true)
+  })
+
+  it('deep links boot straight to a generated channel', async () => {
+    window.history.replaceState(null, '', '#/c/inf-42')
+    await mountApp()
+    expect(txt('.rd-name')).toBe(generateChannel(42).name)
+    click($('.power-big'))
+    await settle(150)
+    expect(canvasIsDrawing()).toBe(true)
+    expect(window.location.hash).toBe('#/c/inf-42')
+  })
+
+  it('favorites work on generated channels', async () => {
+    await mountApp()
+    click($('.power-big'))
+    await settle(60)
+
+    key('6'); key('0'); key('Enter')
+    await settle(600)
+    expect(txt('.rd-name')).toBe(generateChannel(60).name)
+
+    click($('.btn-fav'))
+    await settle(100)
+    expect(txt('.toast')).toContain(generateChannel(60).name)
+    expect($('.btn-fav')?.className).toContain('fav-on')
+    const saved = JSON.parse(localStorage.getItem(PREFS_KEY) ?? '{}')
+    expect(saved.favorites).toContain('inf-60')
   })
 
   it('guide: search and category filters combine, selecting tunes the TV', async () => {
@@ -196,6 +270,22 @@ describe('App integration', () => {
     click($('.guide-row'))
     await settle(60)
     expect(txt('.rd-name')).toBe('Galactic News 404')
+  })
+
+  it('guide hints at the infinite dial and its try-button tunes the void', async () => {
+    await mountApp()
+    click($('.power-big'))
+    await settle(60)
+    key('g')
+    await settle(30)
+
+    expect($('.guide-more')?.textContent).toContain('infinitely many')
+    expect($$('.guide-row').length).toBe(CHANNELS.length) // the hint is not a row
+
+    click($('.gm-try'))
+    await settle(600)
+    expect(txt('.rd-name')).toBe(generateChannel(100).name)
+    expect(window.location.hash).toBe('#/c/inf-100')
   })
 
   it('favorites and volume persist across remounts', async () => {

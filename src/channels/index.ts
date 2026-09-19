@@ -4,7 +4,7 @@
  * and a renderer module in this folder.
  */
 
-import type { ChannelVisual } from '../types'
+import type { ChannelMeta, ChannelVisual } from '../types'
 import * as news from './news'
 import * as shopping from './shopping'
 import * as weather from './weather'
@@ -31,4 +31,12 @@ export const CHANNEL_VISUALS: Record<string, ChannelVisual> = {
   earthwrong: { render: earthwrong.render, logo: earthwrong.logo },
   signals: { render: signals.render, logo: signals.logo },
   public: { render: publicAccess.render, logo: publicAccess.logo },
+}
+
+/**
+ * Visual for any channel, curated or generated. Generated channels borrow
+ * the renderer of the curated channel they derive from (`derivedFrom`).
+ */
+export function getVisualForChannel(ch: ChannelMeta): ChannelVisual | undefined {
+  return CHANNEL_VISUALS[ch.id] ?? (ch.derivedFrom ? CHANNEL_VISUALS[ch.derivedFrom] : undefined)
 }

@@ -372,7 +372,7 @@ body {
 
 .remote-pad {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
 }
 .pad-col { display: flex; flex-direction: column; gap: 8px; }
@@ -419,6 +419,7 @@ body {
 .btn-ch { flex: 1; flex-direction: column; gap: 0; font-size: 0.78rem; line-height: 1.1; }
 .btn-vol { flex: 1; flex-direction: column; gap: 0; font-size: 0.78rem; line-height: 1.1; }
 .btn-rand { flex: 1; flex-direction: column; gap: 0; font-size: 1rem; line-height: 1.1; }
+.btn-last { flex: 1; flex-direction: column; gap: 0; font-size: 1rem; line-height: 1.1; }
 .btn-text { font-size: 0.7rem; }
 .btn-fav { font-size: 1.15rem; color: #fbbf24; background: transparent; border: none; }
 .btn-fav:hover { background: rgba(251,191,36,0.1); }
@@ -698,6 +699,9 @@ body {
   .remote-pad { grid-template-columns: 1fr 1fr; }
   .pad-ch { order: -1; }
   .pad-ch .btn-ch { min-height: 56px; }
+  /* the ⇄ Last button gets a full-width row of its own on phones */
+  .pad-last { grid-column: 1 / -1; }
+  .pad-last .btn-last { min-height: 46px; flex-direction: row; }
   .remote-utility { grid-template-columns: repeat(2, 1fr); }
   .captions { bottom: clamp(52px, 12%, 84px); font-size: clamp(0.85rem, 4vw, 1rem); }
   .wordmark { letter-spacing: 0.08em; }

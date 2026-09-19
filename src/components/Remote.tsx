@@ -9,6 +9,8 @@ import type { Prefs } from '../lib/prefs'
 
 interface Props {
   channel: ChannelMeta
+  /** The station the ⇄ Last button would return to, or null before any tuning. */
+  prevChannel: ChannelMeta | null
   power: boolean
   prefs: Prefs
   isFavorite: boolean
@@ -17,6 +19,7 @@ interface Props {
   fullscreenSupported: boolean
   onPower: () => void
   onTuneDelta: (delta: number) => void
+  onLast: () => void
   onRandom: () => void
   onGuide: () => void
   onMute: () => void
@@ -25,7 +28,7 @@ interface Props {
   onFullscreen: () => void
   onCaptions: () => void
   onShare: () => void
-  onSetting: (key: 'crt' | 'reducedMotion' | 'speech', value: boolean) => void
+  onSetting: (key: 'crt' | 'reducedMotion' | 'speech' | 'film', value: boolean) => void
   onResetPrefs: () => void
 }
 
@@ -86,6 +89,23 @@ export default function Remote(p: Props) {
           </button>
         </div>
 
+        <div className="pad-col pad-last">
+          <button
+            className="btn btn-last"
+            onClick={p.onLast}
+            disabled={!p.prevChannel}
+            title={p.prevChannel ? `Back to ${p.prevChannel.name} (L)` : 'No previous channel yet'}
+            aria-label={
+              p.prevChannel
+                ? `Return to last channel: ${String(p.prevChannel.number).padStart(2, '0')} ${p.prevChannel.name}`
+                : 'Return to last channel'
+            }
+          >
+            <span aria-hidden="true">⇄</span>
+            <span className="btn-text">Last</span>
+          </button>
+        </div>
+
         <div className="pad-col">
           <button className="btn btn-vol" onClick={() => p.onVolume(0.1)} aria-label="Volume up">
             VOL <span aria-hidden="true">+</span>
@@ -137,18 +157,21 @@ export default function Remote(p: Props) {
           <Toggle label="CRT effects" on={p.prefs.crt} onClick={() => p.onSetting('crt', !p.prefs.crt)} />
           <Toggle label="Reduced motion" on={p.prefs.reducedMotion} onClick={() => p.onSetting('reducedMotion', !p.prefs.reducedMotion)} />
           <Toggle label="Voice narration" on={p.prefs.speech} onClick={() => p.onSetting('speech', !p.prefs.speech)} />
+          <Toggle label="Film grain &amp; bloom" on={p.prefs.film} onClick={() => p.onSetting('film', !p.prefs.film)} />
           <button className="set-row set-danger" onClick={p.onResetPrefs}>
             <span>Reset preferences</span>
             <span className="set-knob" aria-hidden="true">↺</span>
           </button>
           <p className="set-note">
             Favorites, volume, effects and last channel are saved on this device.
+            Turn off film grain &amp; bloom if your device struggles — the
+            photographic sets stay, only the per-pixel pass is skipped.
           </p>
         </div>
       )}
 
       <p className="remote-hint">
-        Keys: ▲▼ channel · M mute · F fullscreen · G guide · 0-9 direct tune · Esc close
+        Keys: ▲▼ channel · L last channel · M mute · F fullscreen · G guide · 0-9 direct tune · Esc close
       </p>
     </div>
   )

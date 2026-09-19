@@ -10,6 +10,8 @@ import { audio } from '../lib/audio'
 import {
   circle, equalizer, planet, ring, rr, sky, starfield, text,
 } from '../lib/draw'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -37,27 +39,32 @@ export const logo: LogoRenderer = (ctx, x, y, size, t) => {
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
+
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.02, biasY: -0.05, tint: '#818cf8', haze: 'rgba(129,140,248,0.14)', scrim: 0.42 })
   const segId = f.segment.id
-  sky(ctx, w, h, '#02010a', '#0a0620', '#150b33')
-  starfield(ctx, w, h, seed, reduced ? 0 : t * 0.5, 120, 1.5)
+  if (!plated) {
+    sky(ctx, w, h, '#02010a', '#0a0620', '#150b33')
+    starfield(ctx, w, h, seed, reduced ? 0 : t * 0.5, 120, 1.5)
 
-  // drifting nebula clouds
-  for (let i = 0; i < 4; i++) {
-    const nx = (between(seed, i * 2, 0, w) + (reduced ? 0 : t * (4 + i * 2))) % (w + u * 0.6) - u * 0.3
-    const ny = between(seed, i * 2 + 1, h * 0.05, h * 0.55)
-    const nr = u * (0.16 + i * 0.05)
-    const g = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr)
-    const hue = segId === 'dsr-whales' ? 200 + i * 15 : segId === 'dsr-static' ? 250 + i * 10 : 265 + i * 18
-    g.addColorStop(0, `hsla(${hue}, 80%, 55%, 0.16)`)
-    g.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = g
-    circle(ctx, nx, ny, nr)
-    ctx.fill()
+    // drifting nebula clouds
+    for (let i = 0; i < 4; i++) {
+      const nx = (between(seed, i * 2, 0, w) + (reduced ? 0 : t * (4 + i * 2))) % (w + u * 0.6) - u * 0.3
+      const ny = between(seed, i * 2 + 1, h * 0.05, h * 0.55)
+      const nr = u * (0.16 + i * 0.05)
+      const g = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr)
+      const hue = segId === 'dsr-whales' ? 200 + i * 15 : segId === 'dsr-static' ? 250 + i * 10 : 265 + i * 18
+      g.addColorStop(0, `hsla(${hue}, 80%, 55%, 0.16)`)
+      g.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = g
+      circle(ctx, nx, ny, nr)
+      ctx.fill()
+    }
+
+    // distant planet with ring
+    planet(ctx, w * 0.85, h * 0.2, u * 0.09, '#6366f1', '#1e1b4b', 'rgba(129,140,248,0.6)')
+
   }
-
-  // distant planet with ring
-  planet(ctx, w * 0.85, h * 0.2, u * 0.09, '#6366f1', '#1e1b4b', 'rgba(129,140,248,0.6)')
-
   // ── reactive waveform ──
   const levels = audio.getLevels()
   const bars = 28
@@ -97,6 +104,13 @@ export const render: ChannelRenderer = (ctx, f) => {
   ctx.moveTo(0, baseY)
   ctx.lineTo(w, baseY)
   ctx.stroke()
+
+  // the DJ in the studio, photographed
+  const djH = h * 0.56
+  drawSubject(ctx, f, {
+    x: w * 0.26, y: h * 0.95, w: djH * 0.74, h: djH,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 0.8,
+  })
 
   // ── segment character ──
   if (segId === 'dsr-whales') {
@@ -177,4 +191,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   text(ctx, 'DEEP SPACE RADIO — PROCEDURAL AMBIENT • SIMULATED TRANSMISSION', w - u * 0.03, h * 0.9 - h * 0.04, {
     font: `600 ${u * 0.014}px system-ui`, align: 'right', color: 'rgba(199,210,254,0.75)',
   })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.065, bloom: 0.36, radius: 18, haze: 'rgba(165,180,252,0.14)', hazeStrength: 0.12 })
 }

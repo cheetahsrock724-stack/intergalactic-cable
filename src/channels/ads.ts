@@ -6,6 +6,8 @@
 import type { ChannelRenderer, LogoRenderer } from '../types'
 import { between } from '../lib/rng'
 import { circle, rr, sky, sparkle, starShape, text } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -170,29 +172,34 @@ const ADS: Record<string, Ad> = {
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
+
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.04, tint: '#f0abfc', haze: 'rgba(240,171,252,0.16)', scrim: 0.36 })
   const ad = ADS[f.segment.id] ?? ADS['dc-dejavu']
 
-  // dreamy gradient backdrop cycling slowly
-  const hueShift = reduced ? 0 : Math.sin(t * 0.3) * 20
-  sky(
-    ctx, w, h,
-    `hsl(${ad.hue + hueShift}, 60%, 12%)`,
-    `hsl(${ad.hue + 30 + hueShift}, 65%, 22%)`,
-    `hsl(${ad.hue + 60 + hueShift}, 60%, 16%)`,
-  )
-  // soft blobs
-  for (let i = 0; i < 5; i++) {
-    const bx = between(seed, i * 2, 0, w)
-    const by = between(seed, i * 2 + 1, 0, h)
-    const br = u * (0.1 + between(seed, i, 0, 0.15))
-    const g = ctx.createRadialGradient(bx, by, 0, bx, by, br)
-    g.addColorStop(0, `hsla(${ad.hue + i * 30}, 80%, 65%, 0.16)`)
-    g.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = g
-    circle(ctx, bx, by, br)
-    ctx.fill()
-  }
+  if (!plated) {
+    // dreamy gradient backdrop cycling slowly
+    const hueShift = reduced ? 0 : Math.sin(t * 0.3) * 20
+    sky(
+      ctx, w, h,
+      `hsl(${ad.hue + hueShift}, 60%, 12%)`,
+      `hsl(${ad.hue + 30 + hueShift}, 65%, 22%)`,
+      `hsl(${ad.hue + 60 + hueShift}, 60%, 16%)`,
+    )
+    // soft blobs
+    for (let i = 0; i < 5; i++) {
+      const bx = between(seed, i * 2, 0, w)
+      const by = between(seed, i * 2 + 1, 0, h)
+      const br = u * (0.1 + between(seed, i, 0, 0.15))
+      const g = ctx.createRadialGradient(bx, by, 0, bx, by, br)
+      g.addColorStop(0, `hsla(${ad.hue + i * 30}, 80%, 65%, 0.16)`)
+      g.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = g
+      circle(ctx, bx, by, br)
+      ctx.fill()
+    }
 
+  }
   // rotating starburst behind product
   ctx.save()
   ctx.translate(w * 0.5, h * 0.48)
@@ -271,4 +278,7 @@ export const render: ChannelRenderer = (ctx, f) => {
       u * 0.016, '#fde047', reduced ? 0 : t + i * 1.3,
     )
   }
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.045, bloom: 0.42, radius: 18, haze: 'rgba(240,171,252,0.14)', hazeStrength: 0.1 })
 }

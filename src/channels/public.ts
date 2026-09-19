@@ -8,6 +8,8 @@ import { between } from '../lib/rng'
 import {
   alien, blinkPhase, circle, rr, sky, sparkle, text, talkPhase,
 } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -37,30 +39,37 @@ export const logo: LogoRenderer = (ctx, x, y, size, t) => {
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
-  sky(ctx, w, h, '#1c0a03', '#2d1206', '#431407')
 
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.04, biasY: 0.12, tint: '#fb923c', haze: 'rgba(251,146,60,0.16)', scrim: 0.4 })
+  if (!plated) {
+    sky(ctx, w, h, '#1c0a03', '#2d1206', '#431407')
+
+  }
   const segId = f.segment.id
 
   // ── stage ──
   const stageY = h * 0.68
-  // back wall
-  ctx.fillStyle = '#57230e'
-  ctx.fillRect(0, h * 0.1, w, stageY - h * 0.1)
-  // wood plank lines
-  ctx.strokeStyle = 'rgba(0,0,0,0.2)'
-  ctx.lineWidth = 1
-  for (let y = h * 0.1; y < stageY; y += u * 0.05) {
-    ctx.beginPath()
-    ctx.moveTo(0, y)
-    ctx.lineTo(w, y)
-    ctx.stroke()
-  }
-  // stage floor
-  ctx.fillStyle = '#7c2d12'
-  ctx.fillRect(0, stageY, w, h - stageY)
-  ctx.fillStyle = 'rgba(251,146,60,0.25)'
-  ctx.fillRect(0, stageY, w, u * 0.015)
+  if (!plated) {
+    // back wall
+    ctx.fillStyle = '#57230e'
+    ctx.fillRect(0, h * 0.1, w, stageY - h * 0.1)
+    // wood plank lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'
+    ctx.lineWidth = 1
+    for (let y = h * 0.1; y < stageY; y += u * 0.05) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(w, y)
+      ctx.stroke()
+    }
+    // stage floor
+    ctx.fillStyle = '#7c2d12'
+    ctx.fillRect(0, stageY, w, h - stageY)
+    ctx.fillStyle = 'rgba(251,146,60,0.25)'
+    ctx.fillRect(0, stageY, w, u * 0.015)
 
+  }
   // spotlight cone
   ctx.save()
   const spotX = w * 0.5 + (reduced ? 0 : Math.sin(t * 0.4) * w * 0.04)
@@ -77,28 +86,30 @@ export const render: ChannelRenderer = (ctx, f) => {
   ctx.fill()
   ctx.restore()
 
-  // curtains
-  for (const side of [0, 1]) {
-    const cx = side === 0 ? 0 : w - w * 0.14
-    ctx.fillStyle = '#991b1b'
-    ctx.fillRect(cx, 0, w * 0.14, h)
-    ctx.fillStyle = 'rgba(0,0,0,0.18)'
-    for (let i = 0; i < 4; i++) {
-      ctx.fillRect(cx + i * w * 0.035, 0, w * 0.012, h)
+  if (!plated) {
+    // curtains
+    for (const side of [0, 1]) {
+      const cx = side === 0 ? 0 : w - w * 0.14
+      ctx.fillStyle = '#991b1b'
+      ctx.fillRect(cx, 0, w * 0.14, h)
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'
+      for (let i = 0; i < 4; i++) {
+        ctx.fillRect(cx + i * w * 0.035, 0, w * 0.012, h)
+      }
     }
-  }
-  // valance
-  ctx.fillStyle = '#991b1b'
-  ctx.beginPath()
-  ctx.moveTo(0, 0)
-  ctx.lineTo(w, 0)
-  ctx.lineTo(w, h * 0.06)
-  for (let x = w; x >= 0; x -= w * 0.1) {
-    ctx.quadraticCurveTo(x - w * 0.05, h * 0.11, x - w * 0.1, h * 0.06)
-  }
-  ctx.closePath()
-  ctx.fill()
+    // valance
+    ctx.fillStyle = '#991b1b'
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(w, 0)
+    ctx.lineTo(w, h * 0.06)
+    for (let x = w; x >= 0; x -= w * 0.1) {
+      ctx.quadraticCurveTo(x - w * 0.05, h * 0.11, x - w * 0.1, h * 0.06)
+    }
+    ctx.closePath()
+    ctx.fill()
 
+  }
   // ── audience silhouettes (front) ──
   for (let i = 0; i < 7; i++) {
     const ax = w * (0.08 + i * 0.14)
@@ -321,4 +332,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   text(ctx, 'PUBLIC ACCESS PLANET • FILMED IN A CRATER WITH ONE CHAIR • COMMUNITY POWERED', w * 0.5, h - h * 0.022, {
     font: `700 ${u * 0.014}px system-ui`, align: 'center', baseline: 'middle', color: '#fed7aa',
   })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.075, bloom: 0.3, radius: 14, haze: 'rgba(254,215,170,0.14)', hazeStrength: 0.12 })
 }

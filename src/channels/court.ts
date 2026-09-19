@@ -9,6 +9,8 @@ import {
   alien, blinkPhase, circle, rr, sky, speechBubble, starfield,
   talkPhase, text,
 } from '../lib/draw'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -43,9 +45,14 @@ const CASES: Record<string, { plaintiff: string; defendant: string; no: string }
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
-  sky(ctx, w, h, '#1e1b4b', '#312e81', '#4c1d95')
-  starfield(ctx, w, h, seed, reduced ? 0 : t, 30, 0.5)
 
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.02, biasY: -0.05, tint: '#c4b5fd', haze: 'rgba(196,181,253,0.10)', scrim: 0.44 })
+  if (!plated) {
+    sky(ctx, w, h, '#1e1b4b', '#312e81', '#4c1d95')
+    starfield(ctx, w, h, seed, reduced ? 0 : t, 30, 0.5)
+
+  }
   const info = CASES[f.segment.id] ?? CASES['sc-thursday']
 
   // gavel shake: judge strikes near beat starts with sfx
@@ -54,18 +61,20 @@ export const render: ChannelRenderer = (ctx, f) => {
   ctx.save()
   ctx.translate(shake, shake * 0.5)
 
-  // courtroom back wall: big seal
-  ctx.strokeStyle = 'rgba(250,204,21,0.35)'
-  ctx.lineWidth = 3
-  circle(ctx, w * 0.5, h * 0.24, u * 0.12)
-  ctx.stroke()
-  ctx.strokeStyle = 'rgba(250,204,21,0.2)'
-  circle(ctx, w * 0.5, h * 0.24, u * 0.1)
-  ctx.stroke()
-  text(ctx, '⚖', w * 0.5, h * 0.24, {
-    font: `${u * 0.09}px system-ui`, align: 'center', baseline: 'middle', color: 'rgba(250,204,21,0.5)',
-  })
+  if (!plated) {
+    // courtroom back wall: big seal
+    ctx.strokeStyle = 'rgba(250,204,21,0.35)'
+    ctx.lineWidth = 3
+    circle(ctx, w * 0.5, h * 0.24, u * 0.12)
+    ctx.stroke()
+    ctx.strokeStyle = 'rgba(250,204,21,0.2)'
+    circle(ctx, w * 0.5, h * 0.24, u * 0.1)
+    ctx.stroke()
+    text(ctx, '⚖', w * 0.5, h * 0.24, {
+      font: `${u * 0.09}px system-ui`, align: 'center', baseline: 'middle', color: 'rgba(250,204,21,0.5)',
+    })
 
+  }
   // ── judge bench ──
   const benchY = h * 0.34
   ctx.fillStyle = '#78350f'
@@ -77,6 +86,13 @@ export const render: ChannelRenderer = (ctx, f) => {
   // judge (3 eyes, tiny wig)
   const judgeTalks = (f.beat.speaker ?? '').includes('Judge')
   const jx = w * 0.5, jy = benchY - u * 0.02
+  // a photographed judge sits the bench
+  const benchH = h * 0.46
+  const hasJudge = drawSubject(ctx, f, {
+    x: jx, y: jy + u * 0.02, w: benchH * 0.72, h: benchH,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 0.9, shadow: false,
+  })
+  if (!hasJudge) {
   ctx.save()
   // wig
   ctx.fillStyle = '#e7e5e4'
@@ -92,6 +108,7 @@ export const render: ChannelRenderer = (ctx, f) => {
     x: jx, y: jy, s: u * 0.06, color: '#c4b5fd', shade: '#5b21b6',
     eyes: 3, blink: blinkPhase(t, seed + 5, 4.4), talk: talkPhase(t, 9, judgeTalks),
   })
+  }
 
   // gavel arm — swings on gavel beats
   const swing = gavelHit ? Math.sin(f.beatT * 18) * 0.9 : 0.2
@@ -237,4 +254,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   text(ctx, `SPACE COURT — VERDICT PENDING ${dots}`, w * 0.5, h - h * 0.025, {
     font: `700 ${u * 0.016}px system-ui`, align: 'center', color: '#c4b5fd', baseline: 'middle',
   })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.055, bloom: 0.28, radius: 14, haze: 'rgba(196,181,253,0.12)', hazeStrength: 0.1 })
 }

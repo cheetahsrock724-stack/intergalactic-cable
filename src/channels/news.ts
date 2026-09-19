@@ -70,7 +70,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   }
   // headline wall: rotating headlines panel right side
   const hx = w * 0.62, hy = wy + wh * 0.12, hw2 = ww * 0.34
-  ctx.fillStyle = 'rgba(3,7,23,0.75)'
+  ctx.fillStyle = plated ? 'rgba(3,7,23,0.5)' : 'rgba(3,7,23,0.75)'
   rr(ctx, hx, hy, hw2, wh * 0.76, 8)
   ctx.fill()
   const hIdx = Math.floor((reduced ? f.segIndex * 3 + Math.floor(t / 6) : t / 4)) % HEADLINES.length
@@ -90,18 +90,26 @@ export const render: ChannelRenderer = (ctx, f) => {
     ctx.restore()
   }
 
-  // desk
+  // desk — the photographed studio already has one, so when a plate is up we
+  // only mark its edge instead of painting a vector slab over the bottom third
   const deskY = h * 0.62
-  const dg = ctx.createLinearGradient(0, deskY, 0, h)
-  dg.addColorStop(0, '#1e293b')
-  dg.addColorStop(1, '#0f172a')
-  ctx.fillStyle = dg
-  rr(ctx, -w * 0.05, deskY, w * 1.1, h - deskY + 10, 16)
-  ctx.fill()
-  ctx.fillStyle = '#22d3ee'
-  ctx.globalAlpha = 0.75
-  ctx.fillRect(0, deskY, w, 3)
-  ctx.globalAlpha = 1
+  if (plated) {
+    ctx.fillStyle = '#22d3ee'
+    ctx.globalAlpha = 0.35
+    ctx.fillRect(0, deskY, w, 2)
+    ctx.globalAlpha = 1
+  } else {
+    const dg = ctx.createLinearGradient(0, deskY, 0, h)
+    dg.addColorStop(0, '#1e293b')
+    dg.addColorStop(1, '#0f172a')
+    ctx.fillStyle = dg
+    rr(ctx, -w * 0.05, deskY, w * 1.1, h - deskY + 10, 16)
+    ctx.fill()
+    ctx.fillStyle = '#22d3ee'
+    ctx.globalAlpha = 0.75
+    ctx.fillRect(0, deskY, w, 3)
+    ctx.globalAlpha = 1
+  }
   // desk logo
   text(ctx, 'GN404', w * 0.5, deskY + h * 0.1, {
     font: `900 ${u * 0.075}px system-ui`, align: 'center',
@@ -117,7 +125,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   // the anchor is photographed; the drawn pair is the fallback
   const anchorH = h * 0.62
   const hasAnchor = drawSubject(ctx, f, {
-    x: w * 0.34, y: deskY + h * 0.02, w: anchorH * 0.74, h: anchorH,
+    x: w * 0.34, y: deskY + h * 0.06, w: anchorH * 0.74, h: anchorH,
     anchor: 1, crop: PORTRAIT_CROP, phase: 0,
   })
   if (!hasAnchor) {
@@ -133,7 +141,8 @@ export const render: ChannelRenderer = (ctx, f) => {
     })
   }
 
-  // mic + papers
+  // mic + papers (drawn furniture — only when we are drawing the set)
+  if (!plated) {
   ctx.strokeStyle = '#94a3b8'
   ctx.lineWidth = 2
   ctx.beginPath()
@@ -146,6 +155,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   ctx.rotate(-0.1)
   ctx.fillRect(0, 0, u * 0.08, u * 0.05)
   ctx.restore()
+  }
 
   // LIVE light flashes gently at segment start
   const liveGlow = 0.5 + 0.5 * Math.sin(t * 4)
@@ -158,7 +168,7 @@ export const render: ChannelRenderer = (ctx, f) => {
 
   // breaking-news flash on gavel-less channels: pulse at beat starts (not when reduced)
   if (!reduced && f.beatT < 0.5 && f.beat.sfx) {
-    ctx.fillStyle = `rgba(244,114,182,${0.25 * (1 - f.beatT * 2)})`
+    ctx.fillStyle = `rgba(244,114,182,${(plated ? 0.1 : 0.25) * (1 - f.beatT * 2)})`
     ctx.fillRect(0, 0, w, h)
   }
 

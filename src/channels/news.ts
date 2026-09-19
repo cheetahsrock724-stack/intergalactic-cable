@@ -8,6 +8,8 @@ import {
   alien, blinkPhase, circle, marquee, planet, rr, sky,
   sparkle, starfield, talkPhase, text,
 } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -41,24 +43,31 @@ export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7) // unit scale
 
-  // studio backdrop
-  sky(ctx, w, h, '#060b24', '#0b1336', '#131c4d')
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.02, biasY: -0.1, tint: '#22d3ee', haze: 'rgba(125,211,252,0.10)', scrim: 0.46 })
 
+  if (!plated) {
+    // studio backdrop
+    sky(ctx, w, h, '#060b24', '#0b1336', '#131c4d')
+
+  }
   // big window with space view (upper area)
   const wx = w * 0.06, wy = h * 0.06, ww = w * 0.88, wh = h * 0.42
-  ctx.save()
-  rr(ctx, wx, wy, ww, wh, 10)
-  ctx.clip()
-  sky(ctx, w, h, '#01030f', '#040a24', '#0a1130')
-  starfield(ctx, w, h, seed, reduced ? 0 : t, 70, 2)
-  planet(ctx, wx + ww * 0.78, wy + wh * 0.42, u * 0.16, '#7dd3fc', '#1e40af', 'rgba(125,211,252,0.7)')
-  planet(ctx, wx + ww * 0.2, wy + wh * 0.3, u * 0.06, '#f9a8d4', '#831843')
-  ctx.restore()
-  ctx.strokeStyle = 'rgba(34,211,238,0.55)'
-  ctx.lineWidth = 3
-  rr(ctx, wx, wy, ww, wh, 10)
-  ctx.stroke()
+  if (!plated) {
+    ctx.save()
+    rr(ctx, wx, wy, ww, wh, 10)
+    ctx.clip()
+    sky(ctx, w, h, '#01030f', '#040a24', '#0a1130')
+    starfield(ctx, w, h, seed, reduced ? 0 : t, 70, 2)
+    planet(ctx, wx + ww * 0.78, wy + wh * 0.42, u * 0.16, '#7dd3fc', '#1e40af', 'rgba(125,211,252,0.7)')
+    planet(ctx, wx + ww * 0.2, wy + wh * 0.3, u * 0.06, '#f9a8d4', '#831843')
+    ctx.restore()
+    ctx.strokeStyle = 'rgba(34,211,238,0.55)'
+    ctx.lineWidth = 3
+    rr(ctx, wx, wy, ww, wh, 10)
+    ctx.stroke()
 
+  }
   // headline wall: rotating headlines panel right side
   const hx = w * 0.62, hy = wy + wh * 0.12, hw2 = ww * 0.34
   ctx.fillStyle = 'rgba(3,7,23,0.75)'
@@ -152,4 +161,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   })
 
   sparkle(ctx, w * 0.94, h * 0.18, u * 0.02, '#22d3ee', reduced ? 0 : t)
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.045, bloom: 0.3, radius: 13 })
 }

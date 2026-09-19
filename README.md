@@ -9,11 +9,17 @@ Public Access Planet — and then **keep flipping: every other number on the
 dial is a channel too**, procedurally generated live and deterministic from
 its number. The lineup is effectively infinite.
 
-Every broadcast is **original, procedurally animated fiction**: Canvas
-scenes, Web Audio synthesized music and sound effects, authored dialogue
-captions, and a deterministic schedule that makes each channel behave like a
-station already on air. No backend, no API keys, no downloads — it runs
-entirely in the browser as a static site.
+Every broadcast is **original, procedurally animated fiction**: photographic
+scene plates, Canvas characters and graphics, Web Audio synthesized music and
+sound effects, authored dialogue captions, and a deterministic schedule that
+makes each channel behave like a station already on air. No backend, no API
+keys, no downloads — it runs entirely in the browser as a static site.
+
+Every scene is shot on a **photorealistic plate** — a photographic still of
+the studio, landscape or set — with the channel's cast, props and broadcast
+graphics composited over it and a film pass (grain, halation, haze, contact
+shadows) tying the layers together. This holds for all twelve hand-crafted
+channels *and* for every generated number on the infinite dial.
 
 > **Honest labeling:** this is *simulated* live TV. Programs are generated
 > from a deterministic schedule seeded by the current time — not a real
@@ -56,8 +62,10 @@ npm run typecheck # TypeScript only
 - **Deep links:** `#/c/<channel-slug>` — e.g. `#/c/space-court`. Works on
   refresh and when pasted (hash routing needs no server rewrites).
 - Favorites, volume, mute, captions, CRT effects, reduced motion, voice
-  narration, and last channel are saved in `localStorage`. The ⚙ panel has
-  a **Reset preferences** action.
+  narration, film grain & bloom, and last channel are saved in
+  `localStorage`. The ⚙ panel has a **Reset preferences** action. Turning
+  off film grain & bloom keeps the photographic sets but skips the
+  per-pixel pass — worth trying if your device struggles.
 - **Reduced motion** disables flicker, strobe and most canvas movement
   (and is auto-enabled on first visit if your OS prefers reduced motion).
 
@@ -86,10 +94,14 @@ is also a real channel**, conjured on demand by `src/data/generate.ts`:
 ## Project layout
 
 ```
+public/
+  plates/               photographic scene stills, one set per category
 src/
   data/channels.ts      channel metadata + authored segments/beats (pure data)
   data/generate.ts      the infinite dial: deterministic procedural channels
   lib/
+    plates.ts           deterministic plate choice + the camera move
+    film.ts             grain, halation, haze, contact shadows, light wrap
     dial.ts             channel resolution + navigation (curated 12 + the void)
     schedule.ts         deterministic "what's on air" engine (shared by player & guide)
     rng.ts              stable seeded randomness (hashString / mulberry32 / rand2)
@@ -102,6 +114,46 @@ src/
   hooks/usePrefs.ts     preferences state
 tests/                  vitest: schedule, url, prefs, content integrity
 ```
+
+## The photoreal layer
+
+Photorealism here is a **two-layer system**, because the dial is infinite and
+per-channel artwork cannot be authored:
+
+```
+public/plates/*.jpg   photographic stills, one set per category
+src/lib/plates.ts     deterministic plate choice + the camera move
+src/lib/film.ts       grain, halation, haze, contact shadows, light wrap
+src/channels/*.ts     cast, props and broadcast graphics drawn on top
+```
+
+1. **Plate selection** — `plate = PLATES[channel.category][hash(channel, segment) % n]`.
+   Same inputs, same still, on every device, forever. Nothing is stored.
+2. **The camera** — each plate is cover-fitted and given a very slow push and
+   drift (22–36 s, seeded per channel) so a still reads as a held shot rather
+   than a slide. Reduced motion parks the camera.
+3. **Grade + scrim** — the still is pulled toward the station's accent colour
+   (`soft-light`), given a haze band along the bottom for depth, and scrimmed
+   top and bottom so captions, tickers and bugs stay readable.
+4. **The cast** — the channel's existing characters and graphics draw over the
+   plate, with contact shadows and light wrap seating them into the scene.
+5. **The film pass** — bloom (downsample → square → blur → `lighter`, so only
+   highlights halate), animated photochemical grain (`overlay`), and haze.
+   One frame, one image: the plate supplies light, material and depth; the
+   renderer supplies the performance.
+
+Plates are a **progressive enhancement**. If an image has not decoded yet —
+first frame after a cold cache, offline, or a failed request — `photoBackdrop()`
+returns false and that channel renders the fully procedural scene it has always
+drawn. The TV never shows a blank frame.
+
+### Adding or swapping a plate
+
+Drop a 16:9 still into `public/plates/` and add its name to that category in
+`PLATES` (`src/lib/plates.ts`). Multiple entries per category are picked
+between deterministically, so adding a second `nature-2.jpg` instantly gives
+every nature channel — curated *and* generated — a second look. Keep stills
+around 1365×768 JPEG (~200 KB); they are fetched lazily, one set at a time.
 
 ## How scheduling works
 
@@ -136,9 +188,15 @@ recomputes on a 250 ms tick — same function, same answer.
    `FrameInfo` (`t`, `segIndex`, `beatIndex`, `seed`, `reduced`, …) and the
    helpers in `src/lib/draw.ts`. Keep motion gentle when `f.reduced` is true.
 3. **Register** — add it to `CHANNEL_VISUALS` in `src/channels/index.ts`.
-4. Tests in `tests/content.test.ts` will automatically enforce ≥ 3
+   It inherits the photographic plate for its category automatically; to give
+   it its own, add a still to `PLATES` under that category.
+4. **Composite** — in the renderer, call `photoBackdrop(ctx, f)` first and
+   skip your drawn environment when it returns true, then finish with
+   `filmPass(ctx, f)` (see any existing channel for the pattern).
+5. Tests in `tests/content.test.ts` will automatically enforce ≥ 3
    segments, ≥ 3 beats each, sorted timings, unique ids, and a registered
-   renderer. Run `npm test`.
+   renderer; `tests/plates.test.ts` covers the photographic path. Run
+   `npm test`.
 
 ## How to edit programs & durations
 
@@ -166,11 +224,20 @@ module in `src/channels/`.
 ## Asset credits & licensing
 
 - **Everything is original.** No third-party footage, characters, scripts,
-  music, or samples. All visuals are drawn at runtime with Canvas 2D; all
-  audio is synthesized with Web Audio oscillators and a generated noise
-  buffer; all dialogue is written for this project. Any resemblance to real
-  shows, products, or persons is parody/coincidence, and every "product"
-  and "news story" is explicitly fictional.
+  music, or samples. All dialogue is written for this project, all characters
+  and broadcast graphics are drawn at runtime with Canvas 2D, and all audio is
+  synthesized with Web Audio oscillators and a generated noise buffer. Any
+  resemblance to real shows, products, or persons is parody/coincidence, and
+  every "product" and "news story" is explicitly fictional.
+- **The scene plates are AI-generated.** `public/plates/*.jpg` are
+  AI-generated photographic stills (one set per category), committed to the
+  repository and served as static assets — roughly 2 MB for ten. They contain
+  no real people, brands, or recognisable places, and no text. If you fork
+  this project, be aware that generated imagery may carry different licensing
+  considerations in your jurisdiction than the MIT-licensed code around it;
+  swapping in your own photography is a one-line change per category.
+- Everything except those stills is generated at runtime by the code in this
+  repository.
 - Fonts: system font stack only (no web font downloads).
 - Dependencies: React, Vite, TypeScript, Vitest (MIT-licensed dev tooling).
 - This project is released under the MIT License (see `LICENSE`).
@@ -179,6 +246,12 @@ module in `src/channels/`.
 
 - **Simulated live:** deterministic per device clock; two devices with
   skewed clocks can be seconds apart. It is not a real broadcast feed.
+- **Photorealism is photographic, not video.** Each scene is one still with a
+  slow camera move; the cast and graphics are still drawn as vectors. It reads
+  as a photographed set with characters in it, not as a film.
+- **The film pass costs fill rate.** Grain and bloom run over every pixel. On
+  a desktop GPU this is negligible; on a weak phone it can be the difference
+  between smooth and not, which is why ⚙ has a **Film grain & bloom** toggle.
 - **Audio** requires the initial user gesture (browser autoplay policy) —
   hence the "Turn on TV" button. Voice narration uses optional
   `speechSynthesis`; if unavailable, captions still carry all dialogue.

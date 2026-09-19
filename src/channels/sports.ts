@@ -6,6 +6,8 @@
 import type { ChannelRenderer, LogoRenderer } from '../types'
 import { between } from '../lib/rng'
 import { circle, rr, sky, starShape, starfield, text } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -53,27 +55,34 @@ function makePlayers(seed: number, count: number): Player[] {
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
-  sky(ctx, w, h, '#020617', '#052e16', '#064e3b')
-  starfield(ctx, w, h, seed, reduced ? 0 : t, 40, 1)
 
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.03, biasY: 0.12, tint: '#4ade80', haze: 'rgba(74,222,128,0.14)', scrim: 0.4 })
+  if (!plated) {
+    sky(ctx, w, h, '#020617', '#052e16', '#064e3b')
+    starfield(ctx, w, h, seed, reduced ? 0 : t, 40, 1)
+
+  }
   const segId = f.segment.id
 
-  // dome arena
-  ctx.strokeStyle = 'rgba(74,222,128,0.5)'
-  ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.ellipse(w * 0.5, h * 0.62, w * 0.46, h * 0.4, 0, Math.PI, Math.PI * 2)
-  ctx.stroke()
-  ctx.fillStyle = 'rgba(6,78,59,0.35)'
-  ctx.beginPath()
-  ctx.ellipse(w * 0.5, h * 0.62, w * 0.46, h * 0.4, 0, Math.PI, Math.PI * 2)
-  ctx.fill()
-  // floor ellipse
-  ctx.strokeStyle = 'rgba(74,222,128,0.35)'
-  ctx.beginPath()
-  ctx.ellipse(w * 0.5, h * 0.62, w * 0.46, h * 0.12, 0, 0, Math.PI * 2)
-  ctx.stroke()
+  if (!plated) {
+    // dome arena
+    ctx.strokeStyle = 'rgba(74,222,128,0.5)'
+    ctx.lineWidth = 3
+    ctx.beginPath()
+    ctx.ellipse(w * 0.5, h * 0.62, w * 0.46, h * 0.4, 0, Math.PI, Math.PI * 2)
+    ctx.stroke()
+    ctx.fillStyle = 'rgba(6,78,59,0.35)'
+    ctx.beginPath()
+    ctx.ellipse(w * 0.5, h * 0.62, w * 0.46, h * 0.4, 0, Math.PI, Math.PI * 2)
+    ctx.fill()
+    // floor ellipse
+    ctx.strokeStyle = 'rgba(74,222,128,0.35)'
+    ctx.beginPath()
+    ctx.ellipse(w * 0.5, h * 0.62, w * 0.46, h * 0.12, 0, 0, Math.PI * 2)
+    ctx.stroke()
 
+  }
   // goal ring (right side)
   const goalX = w * 0.86, goalY = h * 0.45
   ctx.strokeStyle = '#facc15'
@@ -82,20 +91,22 @@ export const render: ChannelRenderer = (ctx, f) => {
   ctx.ellipse(goalX, goalY, u * 0.015, u * 0.07, 0, 0, Math.PI * 2)
   ctx.stroke()
 
-  // crowd rows along the dome
-  for (let row = 0; row < 3; row++) {
-    for (let i = 0; i < 14; i++) {
-      const a = Math.PI + (i / 13) * Math.PI
-      const rr2 = 1 - row * 0.08
-      const cx = w * 0.5 + Math.cos(a) * w * 0.42 * rr2
-      const cy = h * 0.62 + Math.sin(a) * h * 0.36 * rr2
-      const bob = reduced ? 0 : Math.abs(Math.sin(t * 4 + i * 0.7 + row)) * u * 0.006
-      ctx.fillStyle = `hsla(${(i * 47 + row * 90) % 360}, 70%, 60%, 0.7)`
-      circle(ctx, cx, cy - bob, u * 0.009)
-      ctx.fill()
+  if (!plated) {
+    // crowd rows along the dome
+    for (let row = 0; row < 3; row++) {
+      for (let i = 0; i < 14; i++) {
+        const a = Math.PI + (i / 13) * Math.PI
+        const rr2 = 1 - row * 0.08
+        const cx = w * 0.5 + Math.cos(a) * w * 0.42 * rr2
+        const cy = h * 0.62 + Math.sin(a) * h * 0.36 * rr2
+        const bob = reduced ? 0 : Math.abs(Math.sin(t * 4 + i * 0.7 + row)) * u * 0.006
+        ctx.fillStyle = `hsla(${(i * 47 + row * 90) % 360}, 70%, 60%, 0.7)`
+        circle(ctx, cx, cy - bob, u * 0.009)
+        ctx.fill()
+      }
     }
-  }
 
+  }
   // ── competitors ──
   const players = makePlayers(seed + f.segIndex * 31, segId === 'ps-marathon' ? 6 : 5)
   // ball position: deterministic Lissajous around the arena
@@ -249,4 +260,7 @@ export const render: ChannelRenderer = (ctx, f) => {
     w * 0.5, h - h * 0.026, {
       font: `700 ${u * 0.014}px system-ui`, align: 'center', baseline: 'middle', color: '#bbf7d0',
     })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.05, bloom: 0.4, radius: 18, haze: 'rgba(187,247,208,0.14)', hazeStrength: 0.12 })
 }

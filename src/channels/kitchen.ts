@@ -8,6 +8,8 @@ import { between, rand2 } from '../lib/rng'
 import {
   blinkPhase, circle, rr, sky, sparkle, starfield, text,
 } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -97,30 +99,39 @@ function hoppingIngredient(
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
-  sky(ctx, w, h, '#2a0a1e', '#4c0519', '#701a3e')
-  starfield(ctx, w, h, seed + 7, reduced ? 0 : t * 0.3, 25, 0.5)
 
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.05, biasY: 0.1, tint: '#fb7185', haze: 'rgba(251,113,133,0.14)', scrim: 0.42 })
+  if (!plated) {
+    sky(ctx, w, h, '#2a0a1e', '#4c0519', '#701a3e')
+    starfield(ctx, w, h, seed + 7, reduced ? 0 : t * 0.3, 25, 0.5)
+
+  }
   const recipe = RECIPES[f.segment.id] ?? RECIPES['rk-souffle']
 
-  // kitchen back wall: shelf with jars
-  ctx.fillStyle = 'rgba(255,255,255,0.06)'
-  ctx.fillRect(0, h * 0.2, w, h * 0.03)
-  for (let i = 0; i < 5; i++) {
-    const jx = w * (0.08 + i * 0.11)
-    ctx.fillStyle = `hsla(${150 + i * 40}, 70%, 60%, 0.5)`
-    rr(ctx, jx, h * 0.12, u * 0.03, h * 0.08, u * 0.008)
-    ctx.fill()
-    ctx.fillStyle = 'rgba(255,255,255,0.3)'
-    ctx.fillRect(jx + u * 0.006, h * 0.13, u * 0.006, h * 0.05)
-  }
+  if (!plated) {
+    // kitchen back wall: shelf with jars
+    ctx.fillStyle = 'rgba(255,255,255,0.06)'
+    ctx.fillRect(0, h * 0.2, w, h * 0.03)
+    for (let i = 0; i < 5; i++) {
+      const jx = w * (0.08 + i * 0.11)
+      ctx.fillStyle = `hsla(${150 + i * 40}, 70%, 60%, 0.5)`
+      rr(ctx, jx, h * 0.12, u * 0.03, h * 0.08, u * 0.008)
+      ctx.fill()
+      ctx.fillStyle = 'rgba(255,255,255,0.3)'
+      ctx.fillRect(jx + u * 0.006, h * 0.13, u * 0.006, h * 0.05)
+    }
 
+  }
   // counter
   const counterY = h * 0.62
-  ctx.fillStyle = '#9f1239'
-  ctx.fillRect(0, counterY, w, h * 0.06)
-  ctx.fillStyle = '#4c0519'
-  ctx.fillRect(0, counterY + h * 0.06, w, h)
+  if (!plated) {
+    ctx.fillStyle = '#9f1239'
+    ctx.fillRect(0, counterY, w, h * 0.06)
+    ctx.fillStyle = '#4c0519'
+    ctx.fillRect(0, counterY + h * 0.06, w, h)
 
+  }
   // ── pot ──
   const potX = w * 0.58, potY = counterY - u * 0.01
   ctx.fillStyle = '#cbd5e1'
@@ -290,4 +301,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   text(ctx, 'ROBOT KITCHEN • COMEDY PROGRAM • PLEASE DO NOT COOK ACTUAL CLOUDS', w * 0.5, h - h * 0.024, {
     font: `700 ${u * 0.015}px system-ui`, align: 'center', baseline: 'middle', color: '#fecdd3',
   })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.055, bloom: 0.34, radius: 16, haze: 'rgba(254,205,211,0.14)', hazeStrength: 0.12 })
 }

@@ -15,6 +15,7 @@ import { getVisualForChannel } from '../channels'
 import { channelStateAt, fmtClock } from '../lib/schedule'
 import { audio } from '../lib/audio'
 import { staticNoise, text, tuningScreen } from '../lib/draw'
+import { preloadCategory } from '../lib/plates'
 
 export interface OnAirInfo {
   segIndex: number
@@ -153,6 +154,11 @@ export default function TvStage({
   useEffect(() => {
     beatKeyRef.current = ''
   }, [channel.id])
+
+  // warm the photographic plates for this station's category on tune
+  useEffect(() => {
+    preloadCategory(channel.category)
+  }, [channel.id, channel.category])
 
   const segment = channel.segments[onair.segIndex] ?? channel.segments[0]
   const beat = segment.beats[onair.beatIndex] ?? segment.beats[0]

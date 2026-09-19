@@ -9,6 +9,8 @@ import {
   circle, equalizer, rr, sky, sparkle, starShape,
   starfield, text, blinkPhase,
 } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -159,16 +161,21 @@ const PRODUCTS: Record<string, Product> = {
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
-  sky(ctx, w, h, '#1a0b2e', '#31103f', '#451a03')
-  starfield(ctx, w, h, seed, reduced ? 0 : t, 50, 1)
 
-  // studio glow floor
-  const fg = ctx.createLinearGradient(0, h * 0.6, 0, h)
-  fg.addColorStop(0, 'rgba(245,158,11,0.12)')
-  fg.addColorStop(1, 'rgba(245,158,11,0.3)')
-  ctx.fillStyle = fg
-  ctx.fillRect(0, h * 0.6, w, h * 0.4)
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.05, biasY: 0.12, tint: '#f59e0b', haze: 'rgba(251,191,36,0.16)', scrim: 0.44 })
+  if (!plated) {
+    sky(ctx, w, h, '#1a0b2e', '#31103f', '#451a03')
+    starfield(ctx, w, h, seed, reduced ? 0 : t, 50, 1)
 
+    // studio glow floor
+    const fg = ctx.createLinearGradient(0, h * 0.6, 0, h)
+    fg.addColorStop(0, 'rgba(245,158,11,0.12)')
+    fg.addColorStop(1, 'rgba(245,158,11,0.3)')
+    ctx.fillStyle = fg
+    ctx.fillRect(0, h * 0.6, w, h * 0.4)
+
+  }
   const product = PRODUCTS[f.segment.id] ?? PRODUCTS['cs-blackhole']
 
   // pedestal
@@ -286,4 +293,7 @@ export const render: ChannelRenderer = (ctx, f) => {
     sparkle(ctx, sx, sy, u * 0.014 * (0.6 + rand2(seed, i) * 0.8), '#fde047', reduced ? 0 : t + i * 1.7)
   }
   equalizer(ctx, w * 0.02, h * 0.9, w * 0.3, h * 0.06, 12, reduced ? 0 : t, 'rgba(245,158,11,0.5)')
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.05, bloom: 0.36, radius: 16, haze: 'rgba(251,191,36,0.14)', hazeStrength: 0.1 })
 }

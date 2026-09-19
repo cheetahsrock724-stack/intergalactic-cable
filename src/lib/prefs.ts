@@ -11,6 +11,8 @@ export interface Prefs {
   crt: boolean
   reducedMotion: boolean
   speech: boolean
+  /** Photographic film pass: grain + bloom (costs fill rate). */
+  film: boolean
   favorites: string[] // channel ids
   lastChannel: string // channel slug
 }
@@ -24,6 +26,7 @@ export const DEFAULT_PREFS: Prefs = {
   crt: true,
   reducedMotion: false,
   speech: true,
+  film: true,
   favorites: [],
   lastChannel: 'galactic-news-404',
 }
@@ -45,6 +48,7 @@ export function sanitizePrefs(raw: unknown): Prefs {
   if (typeof r.crt === 'boolean') p.crt = r.crt
   if (typeof r.reducedMotion === 'boolean') p.reducedMotion = r.reducedMotion
   if (typeof r.speech === 'boolean') p.speech = r.speech
+  if (typeof r.film === 'boolean') p.film = r.film
   if (Array.isArray(r.favorites)) {
     p.favorites = r.favorites.filter((f): f is string => typeof f === 'string')
   }

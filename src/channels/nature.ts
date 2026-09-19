@@ -8,6 +8,8 @@ import { between, rand2 } from '../lib/rng'
 import {
   circle, marquee, particles, planet, rr, sky, starfield, text,
 } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { contactShadow, filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -220,8 +222,19 @@ export const render: ChannelRenderer = (ctx, f) => {
   const u = Math.min(w, h * 1.7)
   const segId = f.segment.id
 
+  // ── the ecosystem itself: a photographed exoplanet when we have the
+  //    plate, the drawn sky otherwise ──
+  const plated = photoBackdrop(ctx, f, {
+    zoom: 1.04,
+    biasY: 0.18,
+    tint: f.channel.accent,
+    haze: 'rgba(190,242,100,0.14)',
+  })
+
   // ── sky per ecosystem ──
-  if (segId === 'an-bumblegloop') {
+  if (plated) {
+    /* the plate is the sky */
+  } else if (segId === 'an-bumblegloop') {
     sky(ctx, w, h, '#2e1065', '#7c3aed', '#c084fc')
     // three patient suns
     for (let i = 0; i < 3; i++) {
@@ -252,8 +265,8 @@ export const render: ChannelRenderer = (ctx, f) => {
 
   // ── floating islands / ground ──
   if (segId === 'an-skysquid') {
-    // floating rocks
-    for (let i = 0; i < 3; i++) {
+    // floating rocks (the plate brings its own terrain)
+    if (!plated) for (let i = 0; i < 3; i++) {
       const fx = w * (0.12 + i * 0.35)
       const fy = h * (0.55 + (i % 2) * 0.2) + (reduced ? 0 : Math.sin(t * 0.5 + i) * 6)
       ctx.fillStyle = '#1e3a5f'
@@ -273,27 +286,34 @@ export const render: ChannelRenderer = (ctx, f) => {
     skySquid(ctx, w * 0.62, h * 0.28, u * 0.09, t, f, 2.1)
     skySquid(ctx, w * 0.48, h * 0.5, u * 0.06, t, f, 4.2)
   } else if (segId === 'an-bumblegloop') {
-    // rolling lavender hills
-    ctx.fillStyle = '#7e22ce'
-    ctx.beginPath()
-    ctx.moveTo(0, h * 0.72)
-    for (let x = 0; x <= w; x += 20) {
-      ctx.lineTo(x, h * 0.72 - Math.sin(x * 0.01 + 1) * h * 0.05)
+    // rolling lavender hills — the plate brings its own terrain
+    if (!plated) {
+      ctx.fillStyle = '#7e22ce'
+      ctx.beginPath()
+      ctx.moveTo(0, h * 0.72)
+      for (let x = 0; x <= w; x += 20) {
+        ctx.lineTo(x, h * 0.72 - Math.sin(x * 0.01 + 1) * h * 0.05)
+      }
+      ctx.lineTo(w, h)
+      ctx.lineTo(0, h)
+      ctx.fill()
+      ctx.fillStyle = '#581c87'
+      ctx.beginPath()
+      ctx.moveTo(0, h * 0.84)
+      for (let x = 0; x <= w; x += 20) {
+        ctx.lineTo(x, h * 0.84 - Math.sin(x * 0.014 + 3) * h * 0.04)
+      }
+      ctx.lineTo(w, h)
+      ctx.lineTo(0, h)
+      ctx.fill()
+      drawGrass(ctx, w, h, seed, t, h * 0.9, 'rgba(216,180,254,0.5)', reduced)
     }
-    ctx.lineTo(w, h)
-    ctx.lineTo(0, h)
-    ctx.fill()
-    ctx.fillStyle = '#581c87'
-    ctx.beginPath()
-    ctx.moveTo(0, h * 0.84)
-    for (let x = 0; x <= w; x += 20) {
-      ctx.lineTo(x, h * 0.84 - Math.sin(x * 0.014 + 3) * h * 0.04)
+    // herd of bumblegloops — seated into the photographed ground
+    if (plated) {
+      contactShadow(ctx, w * 0.24, h * 0.80, u * 0.05, u * 0.012, 0.45)
+      contactShadow(ctx, w * 0.5, h * 0.855, u * 0.07, u * 0.016, 0.45)
+      contactShadow(ctx, w * 0.74, h * 0.785, u * 0.04, u * 0.01, 0.45)
     }
-    ctx.lineTo(w, h)
-    ctx.lineTo(0, h)
-    ctx.fill()
-    drawGrass(ctx, w, h, seed, t, h * 0.9, 'rgba(216,180,254,0.5)', reduced)
-    // herd of bumblegloops
     bumblegloop(ctx, w * 0.24, h * 0.78, u * 0.075, t, 285, reduced)
     bumblegloop(ctx, w * 0.5, h * 0.83, u * 0.1, t + 1.2, 320, reduced)
     bumblegloop(ctx, w * 0.74, h * 0.76, u * 0.06, t + 2.4, 250, reduced)
@@ -302,20 +322,22 @@ export const render: ChannelRenderer = (ctx, f) => {
       color: 'rgba(253,224,71,0.55)', size: 2, fall: -10, drift: 20,
     })
   } else {
-    // crystal canyon floor
-    ctx.fillStyle = '#1f2937'
-    ctx.fillRect(0, h * 0.78, w, h * 0.22)
-    // crystals
-    for (let i = 0; i < 7; i++) {
-      const cx2 = between(seed, i * 2, 0, w)
-      const chh = between(seed, i * 2 + 1, h * 0.08, h * 0.22)
-      ctx.fillStyle = `hsla(${180 + i * 20}, 70%, 60%, 0.4)`
-      ctx.beginPath()
-      ctx.moveTo(cx2 - u * 0.02, h * 0.79)
-      ctx.lineTo(cx2, h * 0.79 - chh)
-      ctx.lineTo(cx2 + u * 0.02, h * 0.79)
-      ctx.closePath()
-      ctx.fill()
+    // crystal canyon floor — drawn only when there is no plate
+    if (!plated) {
+      ctx.fillStyle = '#1f2937'
+      ctx.fillRect(0, h * 0.78, w, h * 0.22)
+      // crystals
+      for (let i = 0; i < 7; i++) {
+        const cx2 = between(seed, i * 2, 0, w)
+        const chh = between(seed, i * 2 + 1, h * 0.08, h * 0.22)
+        ctx.fillStyle = `hsla(${180 + i * 20}, 70%, 60%, 0.4)`
+        ctx.beginPath()
+        ctx.moveTo(cx2 - u * 0.02, h * 0.79)
+        ctx.lineTo(cx2, h * 0.79 - chh)
+        ctx.lineTo(cx2 + u * 0.02, h * 0.79)
+        ctx.closePath()
+        ctx.fill()
+      }
     }
     mossback(ctx, reduced ? w * 0.45 : ((t * 14) % (w * 1.4)) - w * 0.2, h * 0.72, u * 0.12, t, f)
     particles(ctx, w, h, seed, reduced ? 0 : t, 16, {
@@ -346,4 +368,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   marquee(ctx, 'ALIEN NATURE • ALL CREATURES IMAGINARY • NO ECOSYSTEMS WERE DISTURBED • ', h - h * 0.075, reduced ? 0 : t, w, h * 0.075, {
     bg: 'rgba(2,6,23,0.85)', color: '#d9f99d', speed: reduced ? 0 : 46,
   })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.07, bloom: 0.34, radius: 16, haze: 'rgba(217,249,157,0.16)', hazeStrength: 0.12 })
 }

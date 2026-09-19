@@ -8,6 +8,8 @@ import { between, rand2 } from '../lib/rng'
 import {
   circle, rr, staticNoise, starfield, text,
 } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -85,16 +87,21 @@ export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
 
-  // near-black backdrop with faint green nebula
-  ctx.fillStyle = '#010604'
-  ctx.fillRect(0, 0, w, h)
-  const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, u * 0.6)
-  g.addColorStop(0, 'rgba(6,78,59,0.25)')
-  g.addColorStop(1, 'rgba(0,0,0,0)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, w, h)
-  starfield(ctx, w, h, seed, reduced ? 0 : t * 0.3, 60, 0.8)
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.02, tint: '#34d399', haze: 'rgba(52,211,153,0.10)', scrim: 0.34 })
 
+  if (!plated) {
+    // near-black backdrop with faint green nebula
+    ctx.fillStyle = '#010604'
+    ctx.fillRect(0, 0, w, h)
+    const g = ctx.createRadialGradient(w * 0.5, h * 0.45, 0, w * 0.5, h * 0.45, u * 0.6)
+    g.addColorStop(0, 'rgba(6,78,59,0.25)')
+    g.addColorStop(1, 'rgba(0,0,0,0)')
+    ctx.fillStyle = g
+    ctx.fillRect(0, 0, w, h)
+    starfield(ctx, w, h, seed, reduced ? 0 : t * 0.3, 60, 0.8)
+
+  }
   // main sigil — complexity grows with beat index
   const sigilSeed = seed + f.segIndex * 101
   const pulse = reduced ? 1 : 1 + Math.sin(t * 1.5) * 0.03
@@ -182,4 +189,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   text(ctx, `listening${dots}`, w * 0.5, h - h * 0.022, {
     font: `600 ${u * 0.015}px system-ui`, align: 'center', baseline: 'middle', color: 'rgba(110,231,183,0.8)',
   })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.09, bloom: 0.3, radius: 14, haze: 'rgba(110,231,183,0.10)', hazeStrength: 0.1 })
 }

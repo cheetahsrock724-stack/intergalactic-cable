@@ -15,6 +15,7 @@ import {
   resolveChannelBySlug,
 } from './lib/dial'
 import { audio } from './lib/audio'
+import { film as filmPass } from './lib/film'
 import { channelHash, parseChannelSlug, shareUrl } from './lib/url'
 import { PREFS_KEY, DEFAULT_PREFS, loadPrefs } from './lib/prefs'
 import { usePrefs } from './hooks/usePrefs'
@@ -87,7 +88,8 @@ export default function App() {
     audio.setVolume(prefs.volume)
     audio.setMuted(prefs.muted)
     audio.speechEnabled = prefs.speech
-  }, [prefs.volume, prefs.muted, prefs.speech])
+    filmPass.enabled = prefs.film
+  }, [prefs.volume, prefs.muted, prefs.speech, prefs.film])
 
   useEffect(() => {
     if (power && !tuning) audio.setStyle(channel.music)

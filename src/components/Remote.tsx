@@ -28,7 +28,7 @@ interface Props {
   onFullscreen: () => void
   onCaptions: () => void
   onShare: () => void
-  onSetting: (key: 'crt' | 'reducedMotion' | 'speech', value: boolean) => void
+  onSetting: (key: 'crt' | 'reducedMotion' | 'speech' | 'film', value: boolean) => void
   onResetPrefs: () => void
 }
 
@@ -157,12 +157,15 @@ export default function Remote(p: Props) {
           <Toggle label="CRT effects" on={p.prefs.crt} onClick={() => p.onSetting('crt', !p.prefs.crt)} />
           <Toggle label="Reduced motion" on={p.prefs.reducedMotion} onClick={() => p.onSetting('reducedMotion', !p.prefs.reducedMotion)} />
           <Toggle label="Voice narration" on={p.prefs.speech} onClick={() => p.onSetting('speech', !p.prefs.speech)} />
+          <Toggle label="Film grain &amp; bloom" on={p.prefs.film} onClick={() => p.onSetting('film', !p.prefs.film)} />
           <button className="set-row set-danger" onClick={p.onResetPrefs}>
             <span>Reset preferences</span>
             <span className="set-knob" aria-hidden="true">↺</span>
           </button>
           <p className="set-note">
             Favorites, volume, effects and last channel are saved on this device.
+            Turn off film grain &amp; bloom if your device struggles — the
+            photographic sets stay, only the per-pixel pass is skipped.
           </p>
         </div>
       )}

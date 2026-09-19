@@ -7,6 +7,8 @@ import type { ChannelRenderer, LogoRenderer } from '../types'
 import {
   circle, rr, sky, starfield, text, wrapText,
 } from '../lib/draw'
+import { photoBackdrop } from '../lib/plates'
+import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
   ctx.save()
@@ -207,24 +209,29 @@ const SUBJECTS: Record<string, Subject> = {
 export const render: ChannelRenderer = (ctx, f) => {
   const { w, h, t, seed, reduced } = f
   const u = Math.min(w, h * 1.7)
-  sky(ctx, w, h, '#03120a', '#052e16', '#14532d')
-  starfield(ctx, w, h, seed, reduced ? 0 : t * 0.2, 30, 0.5)
 
-  // blueprint grid
-  ctx.strokeStyle = 'rgba(134,239,172,0.1)'
-  ctx.lineWidth = 1
-  const grid = u * 0.06
-  ctx.beginPath()
-  for (let x = 0; x < w; x += grid) {
-    ctx.moveTo(x, 0)
-    ctx.lineTo(x, h)
-  }
-  for (let y = 0; y < h; y += grid) {
-    ctx.moveTo(0, y)
-    ctx.lineTo(w, y)
-  }
-  ctx.stroke()
+  // ── the set itself: a photographed plate when one is available ──
+  const plated = photoBackdrop(ctx, f, { zoom: 1.02, tint: '#86efac', haze: 'rgba(134,239,172,0.12)', scrim: 0.4 })
+  if (!plated) {
+    sky(ctx, w, h, '#03120a', '#052e16', '#14532d')
+    starfield(ctx, w, h, seed, reduced ? 0 : t * 0.2, 30, 0.5)
 
+    // blueprint grid
+    ctx.strokeStyle = 'rgba(134,239,172,0.1)'
+    ctx.lineWidth = 1
+    const grid = u * 0.06
+    ctx.beginPath()
+    for (let x = 0; x < w; x += grid) {
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, h)
+    }
+    for (let y = 0; y < h; y += grid) {
+      ctx.moveTo(0, y)
+      ctx.lineTo(w, y)
+    }
+    ctx.stroke()
+
+  }
   const subject = SUBJECTS[f.segment.id] ?? SUBJECTS['ew-toaster']
 
   // subject
@@ -317,4 +324,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   text(ctx, 'ANALYSIS BY PROF. WRONGINGTON • WRONGNESS: UNMEASURED • EARTH OBJECTS ARE HARMLESS, TRUST US', w * 0.5, h - h * 0.024, {
     font: `700 ${u * 0.014}px system-ui`, align: 'center', baseline: 'middle', color: '#bbf7d0',
   })
+
+  // ── film pass: haze, halation and grain over the whole frame ──
+  filmPass(ctx, f, { grain: 0.05, bloom: 0.32, radius: 15, haze: 'rgba(187,247,208,0.12)', hazeStrength: 0.1 })
 }

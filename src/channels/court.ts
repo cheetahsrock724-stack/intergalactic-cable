@@ -9,7 +9,7 @@ import {
   alien, blinkPhase, circle, rr, sky, speechBubble, starfield,
   talkPhase, text,
 } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
 import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -86,6 +86,13 @@ export const render: ChannelRenderer = (ctx, f) => {
   // judge (3 eyes, tiny wig)
   const judgeTalks = (f.beat.speaker ?? '').includes('Judge')
   const jx = w * 0.5, jy = benchY - u * 0.02
+  // a photographed judge sits the bench
+  const benchH = h * 0.46
+  const hasJudge = drawSubject(ctx, f, {
+    x: jx, y: jy + u * 0.02, w: benchH * 0.72, h: benchH,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 0.9, shadow: false,
+  })
+  if (!hasJudge) {
   ctx.save()
   // wig
   ctx.fillStyle = '#e7e5e4'
@@ -101,6 +108,7 @@ export const render: ChannelRenderer = (ctx, f) => {
     x: jx, y: jy, s: u * 0.06, color: '#c4b5fd', shade: '#5b21b6',
     eyes: 3, blink: blinkPhase(t, seed + 5, 4.4), talk: talkPhase(t, 9, judgeTalks),
   })
+  }
 
   // gavel arm — swings on gavel beats
   const swing = gavelHit ? Math.sin(f.beatT * 18) * 0.9 : 0.2

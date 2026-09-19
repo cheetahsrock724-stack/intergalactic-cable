@@ -9,7 +9,7 @@ import {
   circle, equalizer, rr, sky, sparkle, starShape,
   starfield, text, blinkPhase,
 } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
 import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -201,7 +201,13 @@ export const render: ChannelRenderer = (ctx, f) => {
   product.draw(ctx, 0, 0, u * 0.42, t, f)
   ctx.restore()
 
-  // host robot Chip Zeta (left)
+  // host robot Chip Zeta (left) — photographed when we have him
+  const hostH = h * 0.6
+  const hasHost = drawSubject(ctx, f, {
+    x: w * 0.19, y: h * 0.93, w: hostH * 0.74, h: hostH,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 1.1,
+  })
+  if (!hasHost) {
   const hx = w * 0.2, hy = h * 0.62
   const wave = reduced ? 0.3 : Math.sin(t * 5) * 0.5 + 0.5
   ctx.save()
@@ -250,6 +256,7 @@ export const render: ChannelRenderer = (ctx, f) => {
       ctx.arc(hx + u * 0.08, hy - u * 0.1, u * 0.03 * i + (t * 20) % (u * 0.03), -0.8, 0.8)
       ctx.stroke()
     }
+  }
   }
 
   // price tag pops in mid-segment

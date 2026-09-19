@@ -17,7 +17,8 @@ import { CHANNEL_VISUALS } from '../src/channels'
 import { generateChannel } from '../src/data/generate'
 import { channelStateAt } from '../src/lib/schedule'
 import {
-  PLATES, plateName, plateUrl, primePlate, drawPhotograph, photoBackdrop,
+  PLATES, SUBJECTS, plateName, plateUrl, primePlate, primeSubject,
+  subjectName, drawPhotograph, photoBackdrop,
 } from '../src/lib/plates'
 import { film as filmSwitch, filmPass } from '../src/lib/film'
 import type { ChannelMeta, FrameInfo } from '../src/types'
@@ -26,6 +27,8 @@ const W = 480
 const H = 270
 /** Absolute path to a plate on disk (Skia needs a real path, not a URL). */
 const platePath = (name: string) => resolve(process.cwd(), 'public/plates', `${name}.jpg`)
+
+const subjectPath = (name: string) => resolve(process.cwd(), 'public/subjects', `${name}.jpg`)
 
 const onDisk = (name: string) => existsSync(platePath(name))
 
@@ -71,6 +74,8 @@ function stats(data: Uint8ClampedArray) {
   return { min, max, mean: sum / n, range: max - min }
 }
 
+const onDiskSubject = (name: string) => existsSync(subjectPath(name))
+
 async function primeAll() {
   const seen = new Set<string>()
   for (const list of Object.values(PLATES)) {
@@ -79,6 +84,12 @@ async function primeAll() {
       seen.add(name)
       const img = await loadImage(platePath(name))
       primePlate(name, img as unknown as HTMLImageElement)
+    }
+  }
+  for (const list of Object.values(SUBJECTS)) {
+    for (const name of list ?? []) {
+      if (!onDiskSubject(name)) continue
+      primeSubject(name, await loadImage(subjectPath(name)) as unknown as HTMLImageElement)
     }
   }
   return [...seen]
@@ -284,5 +295,55 @@ describe('film pass switch', () => {
     expect(changed, 'the switch did nothing').toBeGreaterThan(50)
     // the photograph itself is still there when the pass is off
     expect(stats(off).range).toBeGreaterThan(60)
+  })
+})
+
+describe('photographic cast', () => {
+  it('every category with a subject resolves one deterministically', () => {
+    for (const [cat, list] of Object.entries(SUBJECTS)) {
+      const a = subjectName(cat as never, 4242)
+      expect(a, `${cat} resolved to no subject`).toBeTruthy()
+      expect(list).toContain(a)
+      expect(subjectName(cat as never, 4242)).toBe(a)
+    }
+  })
+
+  it('channels with a cast composite it, and the cast changes the frame', async () => {
+    await primeAll()
+    const withCast = CHANNELS.filter((c) => (SUBJECTS[c.category] ?? []).length > 0)
+    expect(withCast.length).toBeGreaterThan(5)
+
+    const render = (ch: ChannelMeta) => {
+      const canvas = createCanvas(W, H)
+      const ctx = canvas.getContext('2d') as unknown as CanvasRenderingContext2D
+      CHANNEL_VISUALS[ch.id].render(ctx, frameFor(ch, NOW))
+      return ctx.getImageData(0, 0, W, H).data
+    }
+
+    for (const ch of withCast) {
+      const withSubject = render(ch)
+      // strip the cast and re-render: the drawn character must come back
+      for (const list of Object.values(SUBJECTS)) {
+        for (const name of list ?? []) primeSubject(name, null as unknown as HTMLImageElement)
+      }
+      const without = render(ch)
+      await primeAll()
+
+      let diff = 0
+      for (let i = 0; i < withSubject.length; i += 4 * 41) {
+        if (Math.abs(withSubject[i] - without[i]) > 6) diff++
+      }
+      expect(diff, `${ch.id}: photographic cast did not appear`).toBeGreaterThan(8)
+      expect(stats(without).range, `${ch.id}: fallback frame is blank`).toBeGreaterThan(30)
+    }
+  })
+
+  it('generated channels inherit their category cast', async () => {
+    await primeAll()
+    for (const n of [7, 55_000]) {
+      const ch = generateChannel(n)
+      if (!(SUBJECTS[ch.category] ?? []).length) continue
+      expect(subjectName(ch.category, 999)).toBeTruthy()
+    }
   })
 })

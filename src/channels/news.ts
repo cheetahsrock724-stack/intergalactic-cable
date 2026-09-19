@@ -8,7 +8,7 @@ import {
   alien, blinkPhase, circle, marquee, planet, rr, sky,
   sparkle, starfield, talkPhase, text,
 } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
 import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -114,16 +114,24 @@ export const render: ChannelRenderer = (ctx, f) => {
   const glarbTalks = speaker.includes('Glarb')
   const bob = reduced ? 0 : Math.sin(t * 2) * u * 0.008
 
-  alien(ctx, {
-    x: w * 0.3, y: deskY - u * 0.1 + bob, s: u * 0.085,
-    color: '#67e8f9', shade: '#0e7490', eyes: 2, antenna: true,
-    blink: blinkPhase(t, seed + 1), talk: talkPhase(t, 12, zorpTalks),
+  // the anchor is photographed; the drawn pair is the fallback
+  const anchorH = h * 0.62
+  const hasAnchor = drawSubject(ctx, f, {
+    x: w * 0.34, y: deskY + h * 0.02, w: anchorH * 0.74, h: anchorH,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 0,
   })
-  alien(ctx, {
-    x: w * 0.46, y: deskY - u * 0.085 - bob, s: u * 0.075,
-    color: '#f9a8d4', shade: '#9d174d', eyes: 3,
-    blink: blinkPhase(t, seed + 2, 4.1), talk: talkPhase(t + 0.4, 11, glarbTalks),
-  })
+  if (!hasAnchor) {
+    alien(ctx, {
+      x: w * 0.3, y: deskY - u * 0.1 + bob, s: u * 0.085,
+      color: '#67e8f9', shade: '#0e7490', eyes: 2, antenna: true,
+      blink: blinkPhase(t, seed + 1), talk: talkPhase(t, 12, zorpTalks),
+    })
+    alien(ctx, {
+      x: w * 0.46, y: deskY - u * 0.085 - bob, s: u * 0.075,
+      color: '#f9a8d4', shade: '#9d174d', eyes: 3,
+      blink: blinkPhase(t, seed + 2, 4.1), talk: talkPhase(t + 0.4, 11, glarbTalks),
+    })
+  }
 
   // mic + papers
   ctx.strokeStyle = '#94a3b8'

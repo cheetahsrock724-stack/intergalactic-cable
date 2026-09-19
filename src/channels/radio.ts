@@ -10,7 +10,7 @@ import { audio } from '../lib/audio'
 import {
   circle, equalizer, planet, ring, rr, sky, starfield, text,
 } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
 import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -104,6 +104,13 @@ export const render: ChannelRenderer = (ctx, f) => {
   ctx.moveTo(0, baseY)
   ctx.lineTo(w, baseY)
   ctx.stroke()
+
+  // the DJ in the studio, photographed
+  const djH = h * 0.56
+  drawSubject(ctx, f, {
+    x: w * 0.26, y: h * 0.95, w: djH * 0.74, h: djH,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 0.8,
+  })
 
   // ── segment character ──
   if (segId === 'dsr-whales') {

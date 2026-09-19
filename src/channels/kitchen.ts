@@ -8,7 +8,7 @@ import { between, rand2 } from '../lib/rng'
 import {
   blinkPhase, circle, rr, sky, sparkle, starfield, text,
 } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
 import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -191,7 +191,13 @@ export const render: ChannelRenderer = (ctx, f) => {
     }
   }
 
-  // ── Benji the robot chef ──
+  // ── Benji the robot chef — photographed when we have him ──
+  const chefH = h * 0.62
+  const hasChef = drawSubject(ctx, f, {
+    x: w * 0.2, y: counterY + h * 0.05, w: chefH * 0.74, h: chefH,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 0.5,
+  })
+  if (!hasChef) {
   const bx = w * 0.22, by = counterY - u * 0.02
   ctx.save()
   ctx.translate(bx, by)
@@ -238,6 +244,7 @@ export const render: ChannelRenderer = (ctx, f) => {
   circle(ctx, u * 0.21 + stir * u * 0.04, -u * 0.09, u * 0.018)
   ctx.fill()
   ctx.restore()
+  }
 
   // ── recipe card (right) ──
   const cardX = w * 0.76, cardY = h * 0.16, cardW = w * 0.22, cardH = h * 0.36

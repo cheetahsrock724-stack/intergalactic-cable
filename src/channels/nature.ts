@@ -8,7 +8,7 @@ import { between, rand2 } from '../lib/rng'
 import {
   circle, marquee, particles, planet, rr, sky, starfield, text,
 } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { drawSubject, photoBackdrop } from '../lib/plates'
 import { contactShadow, filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -339,7 +339,14 @@ export const render: ChannelRenderer = (ctx, f) => {
         ctx.fill()
       }
     }
-    mossback(ctx, reduced ? w * 0.45 : ((t * 14) % (w * 1.4)) - w * 0.2, h * 0.72, u * 0.12, t, f)
+    const grazerH = h * 0.4
+    const grazer = drawSubject(ctx, f, {
+      x: w * 0.55, y: h * 0.9, w: grazerH * 1.5, h: grazerH,
+      anchor: 1, phase: 1.7, float: h * 0.012,
+    })
+    if (!grazer) {
+      mossback(ctx, reduced ? w * 0.45 : ((t * 14) % (w * 1.4)) - w * 0.2, h * 0.72, u * 0.12, t, f)
+    }
     particles(ctx, w, h, seed, reduced ? 0 : t, 16, {
       color: 'rgba(163,230,53,0.4)', size: 1.8, fall: 6, drift: 14,
     })

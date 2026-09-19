@@ -121,10 +121,11 @@ Photorealism here is a **two-layer system**, because the dial is infinite and
 per-channel artwork cannot be authored:
 
 ```
-public/plates/*.jpg   photographic stills, one set per category
-src/lib/plates.ts     deterministic plate choice + the camera move
-src/lib/film.ts       grain, halation, haze, contact shadows, light wrap
-src/channels/*.ts     cast, props and broadcast graphics drawn on top
+public/plates/*.jpg     photographic sets, one per category
+public/subjects/*.jpg   photographic cast — hosts, creatures, players
+src/lib/plates.ts       deterministic plate choice, camera move, cast compositing
+src/lib/film.ts         grain, halation, haze, contact shadows, light wrap
+src/channels/*.ts       props and broadcast graphics drawn on top
 ```
 
 1. **Plate selection** — `plate = PLATES[channel.category][hash(channel, segment) % n]`.
@@ -135,12 +136,19 @@ src/channels/*.ts     cast, props and broadcast graphics drawn on top
 3. **Grade + scrim** — the still is pulled toward the station's accent colour
    (`soft-light`), given a haze band along the bottom for depth, and scrimmed
    top and bottom so captions, tickers and bugs stay readable.
-4. **The cast** — the channel's existing characters and graphics draw over the
-   plate, with contact shadows and light wrap seating them into the scene.
-5. **The film pass** — bloom (downsample → square → blur → `lighter`, so only
+4. **The cast** — each category that has one also gets photographic subject
+   plates (a host, a creature, an athlete). They are cropped to a portrait,
+   feathered into the plate with a soft alpha mask, given a contact shadow and
+   a slow breath so the join does not read as a rectangle. The drawn character
+   is the fallback, not the main event.
+5. **Props and graphics** — the channel's instruments, scoreboards, tickers,
+   lower thirds and captions draw over the composite, which is exactly where
+   they sit on a real broadcast.
+6. **The film pass** — bloom (downsample → square → blur → `lighter`, so only
    highlights halate), animated photochemical grain (`overlay`), and haze.
-   One frame, one image: the plate supplies light, material and depth; the
-   renderer supplies the performance.
+   One frame, one image: the plate supplies light, material and depth, the
+   subject plate supplies the performer, and the renderer supplies the
+   broadcast around them.
 
 Plates are a **progressive enhancement**. If an image has not decoded yet —
 first frame after a cold cache, offline, or a failed request — `photoBackdrop()`
@@ -154,6 +162,11 @@ Drop a 16:9 still into `public/plates/` and add its name to that category in
 between deterministically, so adding a second `nature-2.jpg` instantly gives
 every nature channel — curated *and* generated — a second look. Keep stills
 around 1365×768 JPEG (~200 KB); they are fetched lazily, one set at a time.
+
+Subjects work the same way: drop a character still into `public/subjects/`
+(shot with a blurred background so the feathered mask has something to melt
+into), add it to `SUBJECTS`, and every channel in that category — including
+the generated ones — gets that performer.
 
 ## How scheduling works
 
@@ -229,10 +242,11 @@ module in `src/channels/`.
   synthesized with Web Audio oscillators and a generated noise buffer. Any
   resemblance to real shows, products, or persons is parody/coincidence, and
   every "product" and "news story" is explicitly fictional.
-- **The scene plates are AI-generated.** `public/plates/*.jpg` are
-  AI-generated photographic stills (one set per category), committed to the
-  repository and served as static assets — roughly 2 MB for ten. They contain
-  no real people, brands, or recognisable places, and no text. If you fork
+- **The scene plates and the cast are AI-generated.** `public/plates/*.jpg`
+  (sets) and `public/subjects/*.jpg` (hosts, creatures, players) are
+  AI-generated photographic stills, committed to the repository and served as
+  static assets — roughly 2.5 MB for the lot. They contain no real people,
+  brands, or recognisable places, and no text. If you fork
   this project, be aware that generated imagery may carry different licensing
   considerations in your jurisdiction than the MIT-licensed code around it;
   swapping in your own photography is a one-line change per category.

@@ -9,7 +9,7 @@ import {
   alien, blinkPhase, circle, marquee, planet, rain, rr, sky,
   starfield, talkPhase, text,
 } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
 import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -170,11 +170,18 @@ export const render: ChannelRenderer = (ctx, f) => {
   ctx.strokeStyle = 'rgba(56,189,248,0.5)'
   ctx.stroke()
   const talking = (f.beat.speaker ?? '').includes('Cumulusa')
-  alien(ctx, {
-    x: ix + iw * 0.5, y: iy + ih * 0.62, s: iw * 0.24,
-    color: '#7dd3fc', shade: '#075985', eyes: 2, antenna: true,
-    blink: blinkPhase(t, seed + 3), talk: talkPhase(t, 10, talking),
+  // a photographed meteorologist stands in the corner inset
+  const presented = drawSubject(ctx, f, {
+    x: ix + iw * 0.5, y: iy + ih * 0.96, w: ih * 0.72, h: ih * 0.9,
+    anchor: 1, crop: PORTRAIT_CROP, phase: 1.4, shadow: false,
   })
+  if (!presented) {
+    alien(ctx, {
+      x: ix + iw * 0.5, y: iy + ih * 0.62, s: iw * 0.24,
+      color: '#7dd3fc', shade: '#075985', eyes: 2, antenna: true,
+      blink: blinkPhase(t, seed + 3), talk: talkPhase(t, 10, talking),
+    })
+  }
   text(ctx, 'CUMULUSA', ix + iw / 2, iy + ih - 8, {
     font: `700 ${u * 0.017}px system-ui`, align: 'center', color: '#bae6fd',
   })

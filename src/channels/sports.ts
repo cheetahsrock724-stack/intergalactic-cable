@@ -6,7 +6,7 @@
 import type { ChannelRenderer, LogoRenderer } from '../types'
 import { between } from '../lib/rng'
 import { circle, rr, sky, starShape, starfield, text } from '../lib/draw'
-import { photoBackdrop } from '../lib/plates'
+import { PORTRAIT_CROP, drawSubject, photoBackdrop } from '../lib/plates'
 import { filmPass } from '../lib/film'
 
 export const logo: LogoRenderer = (ctx, x, y, size, t) => {
@@ -128,7 +128,21 @@ export const render: ChannelRenderer = (ctx, f) => {
     }
   }
 
+  // photographed competitors join the field, replacing two of the blobs
+  const athH = h * 0.4
+  const athletes = [
+    drawSubject(ctx, f, {
+      x: w * 0.3, y: h * 0.82, w: athH * 0.68, h: athH,
+      anchor: 1, crop: PORTRAIT_CROP, phase: 0.4, seed: f.seed,
+    }),
+    drawSubject(ctx, f, {
+      x: w * 0.7, y: h * 0.78, w: athH * 0.6, h: athH * 0.88,
+      anchor: 1, crop: PORTRAIT_CROP, phase: 2.3, seed: f.seed + 1,
+    }),
+  ]
+
   players.forEach((p, i) => {
+    if (athletes[0] && (i === 0 || i === 2)) return // photographed instead
     // chase ball with orbiting offset
     const orbit = reduced ? 0 : t * p.speed + p.phase
     const px =

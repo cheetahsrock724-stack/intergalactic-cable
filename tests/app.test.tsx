@@ -201,6 +201,53 @@ describe('App integration', () => {
     expect(canvasIsDrawing()).toBe(true)
   })
 
+  it('⇄ Last swaps back to the previous channel and toggles', async () => {
+    await mountApp()
+    click($('.power-big'))
+    await settle(60)
+
+    // nothing has been watched yet, so there is nowhere to go back to
+    expect(($('.btn-last') as HTMLButtonElement | null)?.disabled).toBe(true)
+
+    key('ArrowUp')
+    await settle(500)
+    expect(txt('.rd-name')).toBe(CHANNELS[1].name)
+    expect(($('.btn-last') as HTMLButtonElement | null)?.disabled).toBe(false)
+
+    click($('.btn-last'))
+    await settle(500)
+    expect(txt('.rd-name')).toBe(CHANNELS[0].name)
+    expect(window.location.hash).toBe(`#/c/${CHANNELS[0].slug}`)
+
+    // the swap is a toggle: the station we left becomes the new "last"
+    click($('.btn-last'))
+    await settle(500)
+    expect(txt('.rd-name')).toBe(CHANNELS[1].name)
+    expect(window.location.hash).toBe(`#/c/${CHANNELS[1].slug}`)
+    expect(canvasIsDrawing()).toBe(true)
+  })
+
+  it('the L key swaps to the last channel, even out in the void', async () => {
+    await mountApp()
+    click($('.power-big'))
+    await settle(60)
+
+    key('6'); key('0'); key('Enter') // tune to generated channel 60
+    await settle(600)
+    expect(txt('.rd-name')).toBe(generateChannel(60).name)
+
+    key('l')
+    await settle(600)
+    expect(txt('.rd-name')).toBe(CHANNELS[0].name)
+    expect(window.location.hash).toBe(`#/c/${CHANNELS[0].slug}`)
+
+    key('L') // uppercase works too
+    await settle(600)
+    expect(txt('.rd-name')).toBe(generateChannel(60).name)
+    expect(window.location.hash).toBe('#/c/inf-60')
+    expect(canvasIsDrawing()).toBe(true)
+  })
+
   it('deep links boot straight to a generated channel', async () => {
     window.history.replaceState(null, '', '#/c/inf-42')
     await mountApp()

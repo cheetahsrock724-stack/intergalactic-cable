@@ -9,6 +9,8 @@ import type { Prefs } from '../lib/prefs'
 
 interface Props {
   channel: ChannelMeta
+  /** The station the ⇄ Last button would return to, or null before any tuning. */
+  prevChannel: ChannelMeta | null
   power: boolean
   prefs: Prefs
   isFavorite: boolean
@@ -17,6 +19,7 @@ interface Props {
   fullscreenSupported: boolean
   onPower: () => void
   onTuneDelta: (delta: number) => void
+  onLast: () => void
   onRandom: () => void
   onGuide: () => void
   onMute: () => void
@@ -86,6 +89,23 @@ export default function Remote(p: Props) {
           </button>
         </div>
 
+        <div className="pad-col pad-last">
+          <button
+            className="btn btn-last"
+            onClick={p.onLast}
+            disabled={!p.prevChannel}
+            title={p.prevChannel ? `Back to ${p.prevChannel.name} (L)` : 'No previous channel yet'}
+            aria-label={
+              p.prevChannel
+                ? `Return to last channel: ${String(p.prevChannel.number).padStart(2, '0')} ${p.prevChannel.name}`
+                : 'Return to last channel'
+            }
+          >
+            <span aria-hidden="true">⇄</span>
+            <span className="btn-text">Last</span>
+          </button>
+        </div>
+
         <div className="pad-col">
           <button className="btn btn-vol" onClick={() => p.onVolume(0.1)} aria-label="Volume up">
             VOL <span aria-hidden="true">+</span>
@@ -148,7 +168,7 @@ export default function Remote(p: Props) {
       )}
 
       <p className="remote-hint">
-        Keys: ▲▼ channel · M mute · F fullscreen · G guide · 0-9 direct tune · Esc close
+        Keys: ▲▼ channel · L last channel · M mute · F fullscreen · G guide · 0-9 direct tune · Esc close
       </p>
     </div>
   )

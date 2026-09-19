@@ -41,11 +41,16 @@ npm run typecheck # TypeScript only
 ## Using the TV
 
 - Press **Turn on TV** (this user gesture also unlocks browser audio).
-- **Remote buttons:** power, CH ▲▼, VOL ±, mute, guide, random, favorite ★,
-  captions (CC), fullscreen, share link, and ⚙ settings.
-- **Keyboard:** ▲/▼ change channel · `M` mute · `F` fullscreen · `G` guide ·
-  `0-9` direct tune (Enter commits) · `Esc` close overlays. Typing inside
-  the guide search is never intercepted.
+- **Remote buttons:** power, CH ▲▼, ⇄ LAST, VOL ±, mute, guide, random,
+  favorite ★, captions (CC), fullscreen, share link, and ⚙ settings.
+- **Keyboard:** ▲/▼ change channel · `L` last channel · `M` mute · `F`
+  fullscreen · `G` guide · `0-9` direct tune (Enter commits) · `Esc` close
+  overlays. Typing inside the guide search is never intercepted.
+- **Last channel:** ⇄ (or `L`) hops back to the station you were watching a
+  moment ago, and hops forward again if you press it twice — just like a real
+  remote's "prev" button. It remembers one step, works out in the void, and
+  lives for the current visit only (it is deliberately *not* persisted —
+  `lastChannel` is).
 - **Guide:** search, category filters, favorites-only filter; the "on air"
   row always agrees with the player because both use the same schedule code.
 - **Deep links:** `#/c/<channel-slug>` — e.g. `#/c/space-court`. Works on

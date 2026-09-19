@@ -37,6 +37,7 @@ function initialChannel(): ChannelMeta {
 export default function App() {
   const [prefs, updatePrefs, resetPrefs] = usePrefs()
   const [channel, setChannel] = useState<ChannelMeta>(initialChannel)
+  const [prevChannel, setPrevChannel] = useState<ChannelMeta | null>(null)
   const [power, setPower] = useState(false)
   const [tuning, setTuning] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
@@ -116,9 +117,9 @@ export default function App() {
   }, [])
 
   // ── tuning ──
-  const tune = useCallback(
+  /** Commit a channel change: state, prefs, hash, and the tuning interlude. */
+  const applyTune = useCallback(
     (next: ChannelMeta) => {
-      if (next.slug === channel.slug) return
       setChannel(next)
       updatePrefs({ lastChannel: next.slug })
       history.replaceState(null, '', channelHash(next.slug))
@@ -130,8 +131,29 @@ export default function App() {
         tuneTimer.current = window.setTimeout(() => setTuning(false), TUNE_MS)
       }
     },
-    [channel, power, updatePrefs],
+    [power, updatePrefs],
   )
+
+  const tune = useCallback(
+    (next: ChannelMeta) => {
+      if (next.slug === channel.slug) return
+      setPrevChannel(channel)
+      applyTune(next)
+    },
+    [channel, applyTune],
+  )
+
+  /** The remote's ⇄ Last button: hop back to the previous station and
+   *  leave the one we just left as the new "last", so it toggles. */
+  const tuneLast = useCallback(() => {
+    if (!prevChannel) {
+      showToast('No previous channel yet — flip somewhere first')
+      return
+    }
+    const back = prevChannel
+    setPrevChannel(channel)
+    applyTune(back)
+  }, [prevChannel, channel, applyTune, showToast])
 
   const tuneDelta = useCallback(
     (delta: number) => {
@@ -246,6 +268,9 @@ export default function App() {
           e.preventDefault()
           tuneDelta(-1)
           break
+        case 'l': case 'L':
+          tuneLast()
+          break
         case 'm': case 'M':
           updatePrefs({ muted: !prefs.muted })
           break
@@ -281,6 +306,7 @@ export default function App() {
       if (!slug) return
       const ch = resolveChannelBySlug(slug)
       if (ch && ch.slug !== channel.slug) {
+        setPrevChannel(channel)
         setChannel(ch)
         if (power) {
           setTuning(true)
@@ -341,6 +367,7 @@ export default function App() {
 
         <Remote
           channel={channel}
+          prevChannel={prevChannel}
           power={power}
           prefs={prefs}
           isFavorite={isFavorite}
@@ -349,6 +376,7 @@ export default function App() {
           fullscreenSupported={fullscreenSupported}
           onPower={togglePower}
           onTuneDelta={tuneDelta}
+          onLast={tuneLast}
           onRandom={tuneRandom}
           onGuide={() => setGuideOpen((g) => !g)}
           onMute={() => updatePrefs({ muted: !prefs.muted })}

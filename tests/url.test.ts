@@ -9,6 +9,12 @@ describe('url routing', () => {
     }
   })
 
+  it('round-trips generated inf-<n> slugs', () => {
+    for (const n of [1, 3, 100, 999]) {
+      expect(parseChannelSlug(channelHash(`inf-${n}`))).toBe(`inf-${n}`)
+    }
+  })
+
   it('parses a plain hash', () => {
     expect(parseChannelSlug('#/c/space-court')).toBe('space-court')
   })

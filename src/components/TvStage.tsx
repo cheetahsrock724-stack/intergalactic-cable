@@ -11,7 +11,7 @@
 
 import { useEffect, useRef } from 'react'
 import type { ChannelMeta, FrameInfo } from '../types'
-import { CHANNEL_VISUALS } from '../channels'
+import { getVisualForChannel } from '../channels'
 import { channelStateAt, fmtClock } from '../lib/schedule'
 import { audio } from '../lib/audio'
 import { staticNoise, text, tuningScreen } from '../lib/draw'
@@ -94,7 +94,7 @@ export default function TvStage({
       }
 
       const st = channelStateAt(ch, Date.now())
-      const visual = CHANNEL_VISUALS[ch.id]
+      const visual = getVisualForChannel(ch)
       const frame: FrameInfo = {
         w: cw, h: chh,
         t: st.t,
@@ -234,7 +234,7 @@ export default function TvStage({
               <span className="power-icon" aria-hidden="true" />
               Turn on TV
             </button>
-            <p className="power-sub">12 channels of simulated live programming from other universes</p>
+            <p className="power-sub">An infinite dial of simulated live programming from other universes</p>
           </div>
         )}
       </div>
@@ -242,7 +242,7 @@ export default function TvStage({
       {/* bezel chin with knobs (decorative but real: they mirror state) */}
       <div className="bezel-chin" aria-hidden="true">
         <span className="chin-brand">INTERGALACTIC CABLE</span>
-        <span className="chin-model">MODEL ∞-12 · SIM-U-LATOR</span>
+        <span className="chin-model">MODEL ∞ · SIM-U-LATOR</span>
         <span className={`chin-led ${power ? 'led-on' : ''}`} />
         <span className="chin-fs">{fullscreenSupported ? '⛶' : ''}</span>
       </div>

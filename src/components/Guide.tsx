@@ -127,6 +127,14 @@ export default function Guide({ now, currentSlug, favorites, onSelect, onToggleF
         )}
       </ul>
 
+      <p className="guide-more">
+        <span className="gm-inf" aria-hidden="true">∞</span>{' '}
+        The printed guide ends here — the dial doesn&apos;t. Beyond these twelve sit{' '}
+        <strong>infinitely many procedurally generated channels</strong>: keep pressing{' '}
+        <strong>CH&nbsp;▲</strong> or type any number on the keypad.{' '}
+        <button className="gm-try" onClick={() => onSelect('inf-100')}>Try channel 100</button>
+      </p>
+
       <p className="guide-foot">
         All programming is simulated live — generated from a deterministic schedule, not a real broadcast feed.
       </p>

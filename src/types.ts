@@ -88,6 +88,12 @@ export interface ChannelMeta {
   accent2: string
   segments: Segment[]
   music: MusicStyle
+  /**
+   * For procedurally generated channels: the id of the curated channel whose
+   * visual style + music bed this channel borrows. Undefined for curated
+   * channels (they are their own template).
+   */
+  derivedFrom?: string
 }
 
 /** Everything a renderer needs for one frame. All values are derived from

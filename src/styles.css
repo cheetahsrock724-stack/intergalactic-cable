@@ -614,6 +614,36 @@ body {
 .guide-empty { padding: 24px 8px; text-align: center; color: var(--dim); font-size: 0.85rem; }
 .guide-foot { margin: 0; font-size: 0.64rem; color: #5b4a8f; text-align: center; }
 
+.guide-more {
+  margin: 10px 2px 12px;
+  padding: 10px 12px;
+  border: 1px dashed var(--edge);
+  border-radius: 10px;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  color: var(--dim);
+}
+.guide-more strong { color: var(--text); }
+.gm-inf {
+  color: var(--cyan);
+  font-weight: 800;
+  font-size: 0.95rem;
+  margin-right: 2px;
+}
+.gm-try {
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--cyan);
+  background: transparent;
+  border: 1px solid rgba(34, 211, 238, 0.35);
+  border-radius: 999px;
+  padding: 2px 10px;
+  cursor: pointer;
+}
+.gm-try:hover { background: rgba(34, 211, 238, 0.12); }
+.gm-try:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+
 /* ── toast + footer ── */
 
 .toast {

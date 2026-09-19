@@ -1,11 +1,13 @@
 # 📡 Intergalactic Cable
 
 A strange, funny, endlessly watchable television experience. Flip between
-**12 channels of simulated live programming** from imaginary planets and
-alternate universes — Galactic News 404, Cosmic Shopping, Void Weather,
-Alien Nature, Space Court, Robot Kitchen, Parallel Sports, Dream
+**twelve hand-crafted channels** of simulated live programming from imaginary
+planets and alternate universes — Galactic News 404, Cosmic Shopping, Void
+Weather, Alien Nature, Space Court, Robot Kitchen, Parallel Sports, Dream
 Commercials, Deep Space Radio, Earth Explained Wrong, Strange Signals, and
-Public Access Planet.
+Public Access Planet — and then **keep flipping: every other number on the
+dial is a channel too**, procedurally generated live and deterministic from
+its number. The lineup is effectively infinite.
 
 Every broadcast is **original, procedurally animated fiction**: Canvas
 scenes, Web Audio synthesized music and sound effects, authored dialogue
@@ -54,12 +56,36 @@ npm run typecheck # TypeScript only
 - **Reduced motion** disables flicker, strobe and most canvas movement
   (and is auto-enabled on first visit if your OS prefers reduced motion).
 
+## The infinite dial
+
+The twelve channels above are hand-written. **Every other positive integer
+is also a real channel**, conjured on demand by `src/data/generate.ts`:
+
+- **Deterministic per number** — channel 100 is the same station on every
+  device, forever: a fixed name, hosts, program loop, and accent palette
+  derived from `mulberry32(hashString("inf-100"))`. Nothing is stored; the
+  channel *is* its number.
+- **Getting there:** press **CH ▲** past the last hand-crafted channel and
+  you fall into the void (it starts at the lowest unused number and ascends
+  forever); or type any number on the keypad (`0-9`, Enter); or hit the
+  random button, which favors the void.
+- **Generated stations** get their own name, tagline, hosts, segment titles,
+  timed caption beats, sound cues, and accent colors. They borrow the
+  renderer and music bed of the hand-crafted channel in the same category —
+  "network family" affiliates — so every category's look is covered.
+- **Everything still works out there:** deep links (`#/c/inf-100`),
+  favorites (★), share links, captions, narration, and the deterministic
+  schedule. The printed guide lists the hand-crafted twelve; the void is
+  navigated with CH ▲▼, the keypad, or links.
+
 ## Project layout
 
 ```
 src/
   data/channels.ts      channel metadata + authored segments/beats (pure data)
+  data/generate.ts      the infinite dial: deterministic procedural channels
   lib/
+    dial.ts             channel resolution + navigation (curated 12 + the void)
     schedule.ts         deterministic "what's on air" engine (shared by player & guide)
     rng.ts              stable seeded randomness (hashString / mulberry32 / rand2)
     audio.ts            single AudioContext: procedural music beds, SFX, optional speech

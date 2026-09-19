@@ -4,9 +4,16 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { CHANNELS, getChannelByNumber, getChannelBySlug } from './data/channels'
+import { CHANNELS } from './data/channels'
 import type { ChannelMeta } from './types'
 import { channelStateAt } from './lib/schedule'
+import {
+  nextDialChannel,
+  randomDialChannel,
+  resolveChannelById,
+  resolveChannelByNumber,
+  resolveChannelBySlug,
+} from './lib/dial'
 import { audio } from './lib/audio'
 import { channelHash, parseChannelSlug, shareUrl } from './lib/url'
 import { PREFS_KEY, DEFAULT_PREFS, loadPrefs } from './lib/prefs'
@@ -20,11 +27,11 @@ const TUNE_MS = 420
 function initialChannel(): ChannelMeta {
   const fromHash = parseChannelSlug(window.location.hash)
   if (fromHash) {
-    const ch = getChannelBySlug(fromHash)
+    const ch = resolveChannelBySlug(fromHash)
     if (ch) return ch
   }
   const prefs = loadPrefs()
-  return getChannelBySlug(prefs.lastChannel) ?? CHANNELS[0]
+  return resolveChannelBySlug(prefs.lastChannel) ?? CHANNELS[0]
 }
 
 export default function App() {
@@ -128,22 +135,18 @@ export default function App() {
 
   const tuneDelta = useCallback(
     (delta: number) => {
-      const idx = CHANNELS.findIndex((c) => c.slug === channel.slug)
-      const next = CHANNELS[(idx + delta + CHANNELS.length) % CHANNELS.length]
-      tune(next)
+      tune(nextDialChannel(channel, delta))
     },
     [channel, tune],
   )
 
   const tuneRandom = useCallback(() => {
-    const others = CHANNELS.filter((c) => c.slug !== channel.slug)
-    const pool = others.length ? others : CHANNELS
-    tune(pool[Math.floor(Math.random() * pool.length)])
+    tune(randomDialChannel(channel))
   }, [channel, tune])
 
   const tuneNumber = useCallback(
     (n: number) => {
-      const ch = getChannelByNumber(n)
+      const ch = resolveChannelByNumber(n)
       if (ch) tune(ch)
       else showToast(`No channel ${n} in this universe`)
     },
@@ -174,7 +177,7 @@ export default function App() {
       updatePrefs({
         favorites: has ? prefs.favorites.filter((f) => f !== id) : [...prefs.favorites, id],
       })
-      const ch = CHANNELS.find((c) => c.id === id)
+      const ch = resolveChannelById(id)
       if (ch) showToast(has ? `Removed ${ch.name} from favorites` : `★ ${ch.name} favorited`)
     },
     [prefs.favorites, updatePrefs, showToast],
@@ -276,7 +279,7 @@ export default function App() {
     const onHash = () => {
       const slug = parseChannelSlug(window.location.hash)
       if (!slug) return
-      const ch = getChannelBySlug(slug)
+      const ch = resolveChannelBySlug(slug)
       if (ch && ch.slug !== channel.slug) {
         setChannel(ch)
         if (power) {
@@ -370,7 +373,7 @@ export default function App() {
           currentSlug={channel.slug}
           favorites={prefs.favorites}
           onSelect={(slug) => {
-            const ch = getChannelBySlug(slug)
+            const ch = resolveChannelBySlug(slug)
             if (ch) {
               tune(ch)
               if (window.innerWidth < 900) setGuideOpen(false)
